@@ -1,6 +1,9 @@
 import { useState, useRef } from "react";
-import { FileSearch, Upload, Copy, Check, Shield, FileText, Hash, AlertTriangle, CheckCircle, XCircle, Loader2, ExternalLink, Bug } from "lucide-react";
+import { FileSearch, Upload, Copy, Check, Shield, FileText, Hash, AlertTriangle, CheckCircle, XCircle, Loader2, ExternalLink, Bug, Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { getFileReport, uploadFile, pollAnalysis, parseFileResults, VTError, type VTFileResult } from "./vt-api";
+import { getApiKey, getQuota } from "./vt-rate-limiter";
+import { QuotaDisplay } from "./QuotaDisplay";
 
 interface FileResult {
   name: string;
@@ -10,14 +13,6 @@ interface FileResult {
   md5: string;
   sha1: string;
   sha256: string;
-}
-
-interface VTFileResult {
-  score: number;
-  total: number;
-  engines: { name: string; result: "clean" | "malicious" | "suspicious" | "unrated" }[];
-  threats: string[];
-  recommendation: string;
 }
 
 async function computeHash(buffer: ArrayBuffer, algorithm: string): Promise<string> {
@@ -62,87 +57,28 @@ function formatBytes(bytes: number): string {
   return (bytes / 1073741824).toFixed(2) + " GB";
 }
 
-// Simulated VirusTotal file scan based on file characteristics
-function simulateVTFileScan(file: File, sha256: string): VTFileResult {
-  const suspiciousExtensions = [".exe", ".bat", ".cmd", ".scr", ".pif", ".com", ".vbs", ".js", ".wsf", ".msi"];
-  const riskyExtensions = [".zip", ".rar", ".7z", ".iso", ".dmg"];
-  const ext = "." + file.name.split(".").pop()?.toLowerCase();
-
-  const engines = [
-    "Kaspersky", "BitDefender", "Norton", "ESET", "Avira", "McAfee", "Sophos",
-    "Fortinet", "Trend Micro", "Webroot", "Comodo", "ClamAV", "Avast", "AVG",
-    "Malwarebytes", "F-Secure", "Panda", "DrWeb", "Ikarus", "GData",
-    "ZoneAlarm", "Cyren", "Arcabit", "Baidu", "Rising", "Jiangmin",
-    "K7", "Symantec", "TotalDefense", "VBA32", "Zillya", "Yandex",
-  ];
-
-  let maliciousCount = 0;
-  let suspiciousCount = 0;
-  const threats: string[] = [];
-
-  if (suspiciousExtensions.includes(ext)) {
-    maliciousCount = 3 + Math.floor(Math.random() * 5);
-    suspiciousCount = 2 + Math.floor(Math.random() * 3);
-    threats.push("Trojan.GenericKD.XXXXXX", "Win32.Malware.Gen");
-  } else if (riskyExtensions.includes(ext)) {
-    suspiciousCount = 1 + Math.floor(Math.random() * 2);
-    threats.push("Archive.Suspicious");
-  }
-
-  if (file.size > 50 * 1024 * 1024) {
-    suspiciousCount += 1;
-  }
-
-  const engineResults = engines.map((name, i) => {
-    let result: "clean" | "malicious" | "suspicious" | "unrated" = "clean";
-    if (i < maliciousCount) result = "malicious";
-    else if (i < maliciousCount + suspiciousCount) result = "suspicious";
-    else if (i >= engines.length - 2) result = "unrated";
-    return { name, result };
-  });
-
-  // Shuffle
-  for (let i = engineResults.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [engineResults[i], engineResults[j]] = [engineResults[j], engineResults[i]];
-  }
-
-  const cleanCount = engineResults.filter(e => e.result === "clean").length;
-  const score = Math.round((cleanCount / engines.length) * 100);
-
-  let recommendation = "";
-  if (maliciousCount > 0) {
-    recommendation = "Ce fichier est potentiellement dangereux. Ne l'executez pas et supprimez-le immediatement. Si vous l'avez deja ouvert, lancez un scan antivirus complet de votre systeme.";
-  } else if (suspiciousCount > 0) {
-    recommendation = "Ce fichier presente des elements suspects. Evitez de l'executer sans verification approfondie. Soumettez-le a une sandbox pour analyse dynamique.";
-  } else {
-    recommendation = "Aucune menace detectee. Le fichier semble sain d'apres les moteurs antivirus. Restez vigilant avec les fichiers provenant de sources inconnues.";
-  }
-
-  return {
-    score,
-    total: engines.length,
-    engines: engineResults,
-    threats,
-    recommendation,
-  };
-}
+type VTPhase = "idle" | "hashing" | "looking-up" | "uploading" | "polling" | "done" | "not-found" | "error";
 
 export function FileAnalyzer() {
   const [result, setResult] = useState<FileResult | null>(null);
   const [vtResult, setVtResult] = useState<VTFileResult | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [vtScanning, setVtScanning] = useState(false);
+  const [vtPhase, setVtPhase] = useState<VTPhase>("idle");
+  const [vtStatus, setVtStatus] = useState("");
+  const [vtError, setVtError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [copiedField, setCopiedField] = useState("");
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const apiKey = getApiKey();
+
   const analyzeFile = async (file: File) => {
-    setAnalyzing(true);
+    setVtPhase("hashing");
     setResult(null);
     setVtResult(null);
+    setVtError("");
     setCurrentFile(file);
+    setVtStatus("Calcul des empreintes cryptographiques...");
 
     try {
       const buffer = await file.arrayBuffer();
@@ -163,17 +99,122 @@ export function FileAnalyzer() {
       };
 
       setResult(fileResult);
-      setAnalyzing(false);
 
-      // Auto-launch VirusTotal scan
-      setVtScanning(true);
-      await new Promise((r) => setTimeout(r, 2000 + Math.random() * 1500));
-      const vtRes = simulateVTFileScan(file, sha256);
-      setVtResult(vtRes);
-      setVtScanning(false);
+      // Try VT lookup if API key is configured
+      if (!apiKey) {
+        setVtPhase("idle");
+        return;
+      }
+
+      const quota = getQuota();
+      if (!quota.canRequest) {
+        setVtError(quota.blockedReason || "Rate limit atteint");
+        setVtPhase("error");
+        return;
+      }
+
+      // Step 1: Look up hash
+      setVtPhase("looking-up");
+      setVtStatus("Recherche du hash SHA-256 dans la base VirusTotal...");
+
+      try {
+        const report = await getFileReport(sha256);
+        const parsed = parseFileResults(report);
+        setVtResult(parsed);
+        setVtPhase("done");
+      } catch (err) {
+        if (err instanceof VTError && (err.code === "NotFoundError" || err.code === "HTTP_404")) {
+          // File not in VT database - offer to upload
+          setVtPhase("not-found");
+          setVtStatus("Fichier inconnu de VirusTotal");
+        } else {
+          throw err;
+        }
+      }
     } catch (err) {
-      console.error("File analysis error:", err);
-      setAnalyzing(false);
+      if (err instanceof VTError) {
+        setVtError(err.message);
+      } else {
+        setVtError("Erreur lors de l'analyse. Verifiez votre connexion.");
+      }
+      setVtPhase("error");
+    }
+  };
+
+  const handleUploadToVT = async () => {
+    if (!currentFile) return;
+
+    const quota = getQuota();
+    if (!quota.canRequest) {
+      setVtError(quota.blockedReason || "Rate limit atteint");
+      setVtPhase("error");
+      return;
+    }
+
+    try {
+      setVtPhase("uploading");
+      setVtStatus("Upload du fichier vers VirusTotal...");
+
+      if (currentFile.size > 32 * 1024 * 1024) {
+        setVtError("Le fichier depasse 32 MB. L'upload de gros fichiers necessite un endpoint special (non supporte en free tier).");
+        setVtPhase("error");
+        return;
+      }
+
+      const analysisId = await uploadFile(currentFile);
+
+      // Poll
+      setVtPhase("polling");
+      setVtStatus("Analyse en cours par les moteurs antivirus...");
+
+      const analysis = await pollAnalysis(analysisId, (status) => {
+        if (status === "queued") setVtStatus("En file d'attente...");
+        else if (status === "in-progress") setVtStatus("Scan en cours...");
+      });
+
+      // Now fetch full report
+      const sha256 = result?.sha256;
+      if (sha256) {
+        setVtStatus("Recuperation du rapport complet...");
+        try {
+          const report = await getFileReport(sha256);
+          const parsed = parseFileResults(report);
+          setVtResult(parsed);
+          setVtPhase("done");
+        } catch {
+          // If report not yet available, show analysis stats
+          const stats = analysis.data.attributes.stats;
+          setVtResult({
+            sha256: sha256,
+            sha1: result?.sha1 || "",
+            md5: result?.md5 || "",
+            fileName: currentFile.name,
+            fileSize: currentFile.size,
+            fileType: currentFile.type,
+            scanDate: new Date().toLocaleString("fr-FR"),
+            stats: {
+              harmless: stats?.harmless || 0,
+              malicious: stats?.malicious || 0,
+              suspicious: stats?.suspicious || 0,
+              undetected: stats?.undetected || 0,
+              timeout: stats?.timeout || 0,
+              failure: stats?.failure || 0,
+            },
+            engines: [],
+            reputation: 0,
+            tags: [],
+            threats: [],
+          });
+          setVtPhase("done");
+        }
+      }
+    } catch (err) {
+      if (err instanceof VTError) {
+        setVtError(err.message);
+      } else {
+        setVtError("Erreur lors de l'upload.");
+      }
+      setVtPhase("error");
     }
   };
 
@@ -197,7 +238,7 @@ export function FileAnalyzer() {
 
   const getColor = (r: string) => {
     switch (r) {
-      case "clean": return "#39ff14";
+      case "clean": case "harmless": return "#39ff14";
       case "malicious": return "#ef4444";
       case "suspicious": return "#f59e0b";
       default: return "#64748b";
@@ -206,7 +247,7 @@ export function FileAnalyzer() {
 
   const getLabel = (r: string) => {
     switch (r) {
-      case "clean": return "Sain";
+      case "clean": case "harmless": return "Sain";
       case "malicious": return "Malveillant";
       case "suspicious": return "Suspect";
       default: return "Non evalue";
@@ -219,7 +260,7 @@ export function FileAnalyzer() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6" style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)" }}>
             <FileSearch className="w-3.5 h-3.5 text-[#ef4444]" />
-            <span className="text-[#ef4444]" style={{ fontSize: "0.75rem", fontFamily: "JetBrains Mono, monospace" }}>Hash + VirusTotal</span>
+            <span className="text-[#ef4444]" style={{ fontSize: "0.75rem", fontFamily: "JetBrains Mono, monospace" }}>Hash + VirusTotal API v3</span>
           </div>
           <h1 style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.8rem, 3vw, 2.2rem)" }} className="text-[#e2e8f0] mb-4">
             Analyseur de{" "}
@@ -230,6 +271,11 @@ export function FileAnalyzer() {
             avec les moteurs antivirus VirusTotal pour detecter les menaces.
           </p>
         </motion.div>
+
+        {/* Quota display */}
+        <div className="mb-6">
+          <QuotaDisplay />
+        </div>
 
         {/* Drop zone */}
         <div
@@ -246,10 +292,10 @@ export function FileAnalyzer() {
           <input ref={fileRef} type="file" onChange={handleFileSelect} className="hidden" />
           <Upload className={`w-12 h-12 mx-auto mb-4 ${dragOver ? "text-[#ef4444]" : "text-[#64748b]"}`} />
           <p className="text-[#e2e8f0] mb-2">
-            {analyzing ? "Analyse en cours..." : "Glissez-deposez un fichier ici"}
+            {vtPhase === "hashing" ? "Calcul des hash en cours..." : "Glissez-deposez un fichier ici"}
           </p>
           <p className="text-[#64748b]" style={{ fontSize: "0.85rem" }}>
-            ou cliquez pour selectionner un fichier
+            ou cliquez pour selectionner un fichier (max 32 MB pour l'upload VT)
           </p>
         </div>
 
@@ -319,51 +365,98 @@ export function FileAnalyzer() {
                 </h2>
               </div>
 
-              {vtScanning && (
+              {!apiKey && (
+                <div className="bg-[#f59e0b]/5 border border-[#f59e0b]/20 rounded-xl p-4 flex items-start gap-3">
+                  <Info className="w-5 h-5 text-[#f59e0b] flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[#f59e0b]" style={{ fontSize: "0.9rem" }}>API non configuree</p>
+                    <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>
+                      Ajoutez <code className="bg-[#f59e0b]/10 px-1 rounded">VITE_VIRUSTOTAL_API_KEY</code> dans vos variables
+                      d'environnement Vercel pour activer le scan automatique. Les hash sont calcules 100% localement via Web Crypto API.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Scanning state */}
+              {(vtPhase === "looking-up" || vtPhase === "uploading" || vtPhase === "polling") && (
                 <div className="bg-[#111827] border border-[#8b5cf6]/20 rounded-xl p-8 flex flex-col items-center gap-4">
                   <Loader2 className="w-12 h-12 text-[#8b5cf6] animate-spin" />
                   <p className="text-[#8b5cf6]" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.85rem" }}>
-                    Interrogation de {32} moteurs antivirus...
-                  </p>
-                  <p className="text-[#64748b]" style={{ fontSize: "0.8rem" }}>
-                    Recherche du hash SHA-256 dans la base VirusTotal
+                    {vtStatus}
                   </p>
                 </div>
               )}
 
+              {/* Not found - offer upload */}
+              {vtPhase === "not-found" && (
+                <div className="bg-[#111827] border border-[#f59e0b]/20 rounded-xl p-6 text-center">
+                  <AlertTriangle className="w-10 h-10 text-[#f59e0b] mx-auto mb-3" />
+                  <p className="text-[#f59e0b] mb-2" style={{ fontFamily: "Orbitron, sans-serif", fontSize: "0.95rem" }}>
+                    Fichier inconnu
+                  </p>
+                  <p className="text-[#94a3b8] mb-4" style={{ fontSize: "0.85rem" }}>
+                    Ce fichier n'a jamais ete analyse par VirusTotal. Vous pouvez le soumettre pour analyse.
+                  </p>
+                  <button
+                    onClick={handleUploadToVT}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-[#8b5cf6] text-white rounded-lg hover:bg-[#7c3aed] transition-colors"
+                    style={{ fontFamily: "Orbitron, sans-serif", fontSize: "0.85rem" }}
+                  >
+                    <Upload className="w-4 h-4" />
+                    Soumettre a VirusTotal
+                  </button>
+                </div>
+              )}
+
+              {/* Error */}
+              {vtPhase === "error" && vtError && (
+                <div className="bg-[#ef4444]/5 border border-[#ef4444]/20 rounded-xl p-4 flex items-start gap-3">
+                  <XCircle className="w-5 h-5 text-[#ef4444] flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[#ef4444]" style={{ fontSize: "0.9rem" }}>Erreur</p>
+                    <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>{vtError}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* VT Results */}
               <AnimatePresence>
-                {vtResult && (
+                {vtResult && vtPhase === "done" && (
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                     {/* Score */}
                     <div className="bg-[#111827] border border-[#8b5cf6]/20 rounded-xl p-6 text-center">
-                      <p className="text-[#94a3b8] mb-2" style={{ fontSize: "0.85rem" }}>Score de securite</p>
-                      <div
-                        className="mb-2"
-                        style={{
-                          fontFamily: "Orbitron, sans-serif",
-                          fontSize: "3.5rem",
-                          color: vtResult.score >= 90 ? "#39ff14" : vtResult.score >= 70 ? "#f59e0b" : "#ef4444",
-                        }}
-                      >
-                        {vtResult.score}%
-                      </div>
+                      <p className="text-[#94a3b8] mb-2" style={{ fontSize: "0.85rem" }}>Resultat VirusTotal</p>
                       <div className="flex items-center justify-center gap-4 flex-wrap">
                         {[
-                          { label: "Sains", count: vtResult.engines.filter(e => e.result === "clean").length, color: "#39ff14" },
-                          { label: "Malveillants", count: vtResult.engines.filter(e => e.result === "malicious").length, color: "#ef4444" },
-                          { label: "Suspects", count: vtResult.engines.filter(e => e.result === "suspicious").length, color: "#f59e0b" },
-                          { label: "Non evalues", count: vtResult.engines.filter(e => e.result === "unrated").length, color: "#64748b" },
+                          { label: "Sains", count: vtResult.stats.harmless, color: "#39ff14" },
+                          { label: "Malveillants", count: vtResult.stats.malicious, color: "#ef4444" },
+                          { label: "Suspects", count: vtResult.stats.suspicious, color: "#f59e0b" },
+                          { label: "Non evalues", count: vtResult.stats.undetected, color: "#64748b" },
                         ].map((s) => (
                           <span key={s.label} className="flex items-center gap-1.5" style={{ fontSize: "0.8rem" }}>
                             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
-                            <span style={{ color: s.color }}>{s.count}</span>
+                            <span style={{ color: s.color, fontFamily: "Orbitron, sans-serif", fontSize: "1.2rem" }}>{s.count}</span>
                             <span className="text-[#64748b]">{s.label}</span>
                           </span>
                         ))}
                       </div>
+
+                      {vtResult.sha256 && (
+                        <a
+                          href={`https://www.virustotal.com/gui/file/${vtResult.sha256}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 mt-4 text-[#8b5cf6] hover:text-[#a78bfa] transition-colors"
+                          style={{ fontSize: "0.8rem" }}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Voir le rapport complet sur VirusTotal
+                        </a>
+                      )}
                     </div>
 
-                    {/* Threats detected */}
+                    {/* Threats */}
                     {vtResult.threats.length > 0 && (
                       <div className="bg-[#ef4444]/5 border border-[#ef4444]/20 rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-3">
@@ -385,58 +478,63 @@ export function FileAnalyzer() {
                     <div
                       className="rounded-xl p-4 flex items-start gap-3"
                       style={{
-                        background: vtResult.score >= 90 ? "rgba(57,255,20,0.05)" : vtResult.score >= 70 ? "rgba(245,158,11,0.05)" : "rgba(239,68,68,0.05)",
-                        border: `1px solid ${vtResult.score >= 90 ? "rgba(57,255,20,0.2)" : vtResult.score >= 70 ? "rgba(245,158,11,0.2)" : "rgba(239,68,68,0.2)"}`,
+                        background: vtResult.stats.malicious === 0 ? "rgba(57,255,20,0.05)" : "rgba(239,68,68,0.05)",
+                        border: `1px solid ${vtResult.stats.malicious === 0 ? "rgba(57,255,20,0.2)" : "rgba(239,68,68,0.2)"}`,
                       }}
                     >
-                      {vtResult.score >= 90 ? (
+                      {vtResult.stats.malicious === 0 ? (
                         <CheckCircle className="w-5 h-5 text-[#39ff14] flex-shrink-0 mt-0.5" />
-                      ) : vtResult.score >= 70 ? (
-                        <AlertTriangle className="w-5 h-5 text-[#f59e0b] flex-shrink-0 mt-0.5" />
                       ) : (
                         <XCircle className="w-5 h-5 text-[#ef4444] flex-shrink-0 mt-0.5" />
                       )}
                       <div>
-                        <p style={{ fontSize: "0.9rem", color: vtResult.score >= 90 ? "#39ff14" : vtResult.score >= 70 ? "#f59e0b" : "#ef4444" }}>
-                          {vtResult.score >= 90 ? "Fichier sain" : vtResult.score >= 70 ? "Fichier suspect" : "Fichier dangereux"}
+                        <p style={{ fontSize: "0.9rem", color: vtResult.stats.malicious === 0 ? "#39ff14" : "#ef4444" }}>
+                          {vtResult.stats.malicious === 0 ? "Fichier sain" : `${vtResult.stats.malicious} moteur(s) detectent une menace`}
                         </p>
-                        <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>{vtResult.recommendation}</p>
+                        <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>
+                          {vtResult.stats.malicious === 0
+                            ? "Aucune menace detectee par les moteurs antivirus VirusTotal."
+                            : "Ce fichier a ete signale comme malveillant. Ne l'executez pas et supprimez-le immediatement."}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Engine details (collapsible) */}
-                    <details className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl overflow-hidden">
-                      <summary className="p-4 cursor-pointer text-[#e2e8f0] hover:bg-[#1e293b]/30 transition-colors" style={{ fontSize: "0.9rem" }}>
-                        Details par moteur antivirus ({vtResult.total} moteurs)
-                      </summary>
-                      <div className="divide-y divide-[#00d4ff]/5 max-h-80 overflow-y-auto">
-                        {vtResult.engines.map((e) => (
-                          <div key={e.name} className="flex items-center justify-between px-4 py-2.5">
-                            <span className="text-[#e2e8f0]" style={{ fontSize: "0.85rem" }}>{e.name}</span>
-                            <span
-                              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full"
-                              style={{ fontSize: "0.75rem", color: getColor(e.result), backgroundColor: `${getColor(e.result)}15` }}
-                            >
-                              {e.result === "clean" ? <CheckCircle className="w-3 h-3" /> : e.result === "malicious" ? <XCircle className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-                              {getLabel(e.result)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </details>
+                    {/* Engine details */}
+                    {vtResult.engines.length > 0 && (
+                      <details className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl overflow-hidden">
+                        <summary className="p-4 cursor-pointer text-[#e2e8f0] hover:bg-[#1e293b]/30 transition-colors" style={{ fontSize: "0.9rem" }}>
+                          Details par moteur antivirus ({vtResult.engines.length} moteurs)
+                        </summary>
+                        <div className="divide-y divide-[#00d4ff]/5 max-h-80 overflow-y-auto">
+                          {vtResult.engines.map((e) => (
+                            <div key={e.name} className="flex items-center justify-between px-4 py-2.5">
+                              <span className="text-[#e2e8f0]" style={{ fontSize: "0.85rem" }}>{e.name}</span>
+                              <div className="flex items-center gap-2">
+                                {e.result && (
+                                  <span className="text-[#64748b] font-mono" style={{ fontSize: "0.65rem" }}>{e.result}</span>
+                                )}
+                                <span
+                                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full"
+                                  style={{ fontSize: "0.75rem", color: getColor(e.category), backgroundColor: `${getColor(e.category)}15` }}
+                                >
+                                  {e.category === "harmless" || e.category === "clean" ? <CheckCircle className="w-3 h-3" /> : e.category === "malicious" ? <XCircle className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                                  {getLabel(e.category)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
 
-                    {/* Note */}
-                    <div className="bg-[#8b5cf6]/5 border border-[#8b5cf6]/20 rounded-xl p-4 flex items-start gap-3">
-                      <ExternalLink className="w-5 h-5 text-[#8b5cf6] flex-shrink-0 mt-0.5" />
+                    {/* Real API notice */}
+                    <div className="bg-[#39ff14]/5 border border-[#39ff14]/20 rounded-xl p-4 flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-[#39ff14] flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-[#8b5cf6]" style={{ fontSize: "0.9rem" }}>Simulation VirusTotal</p>
+                        <p className="text-[#39ff14]" style={{ fontSize: "0.9rem" }}>Analyse reelle VirusTotal API v3</p>
                         <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>
-                          Les resultats affiches sont une simulation. Pour une analyse reelle, soumettez le hash SHA-256
-                          sur{" "}
-                          <a href="https://www.virustotal.com" target="_blank" rel="noopener noreferrer" className="text-[#8b5cf6] hover:underline">
-                            virustotal.com
-                          </a>.
-                          Les hash sont calcules 100% localement via Web Crypto API.
+                          Ces resultats proviennent de l'API VirusTotal v3 en temps reel.
+                          Les hash sont calcules localement via Web Crypto API.
                         </p>
                       </div>
                     </div>
