@@ -1,27 +1,20 @@
 import { useState } from "react";
-import { Mail, Search, CheckCircle, XCircle, AlertTriangle, Shield, Globe, Loader2, Link2, SpellCheck, Bug, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { Mail, Search, CheckCircle, XCircle, AlertTriangle, Shield, Loader2, Link2, SpellCheck, Bug, ChevronDown, ChevronUp, Sparkles, Brain, Clock, Lock, AlertOctagon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
-interface EmailAnalysis {
-  email: string;
-  isValid: boolean;
-  checks: {
-    label: string;
-    status: "pass" | "fail" | "warn";
-    detail: string;
-    fix?: string;
-  }[];
-  riskScore: number;
-  riskLabel: string;
-  detectedLinks: LinkScanResult[];
-  spellingErrors: SpellingError[];
+// ─── Types ───────────────────────────────────────────────────────────────
+
+interface CheckItem {
+  label: string;
+  status: "pass" | "fail" | "warn";
+  detail: string;
+  fix?: string;
+  priority: number; // lower = shown first
 }
 
 interface LinkScanResult {
   url: string;
   safe: boolean;
-  engines: number;
-  flagged: number;
   threats: string[];
 }
 
@@ -31,50 +24,95 @@ interface SpellingError {
   context: string;
 }
 
+interface GeminiAnalysis {
+  verdict: "safe" | "suspicious" | "dangerous";
+  confidence: number;
+  summary: string;
+  details: string[];
+  tactics: string[];
+}
+
+interface EmailAnalysis {
+  email: string;
+  isValid: boolean;
+  checks: CheckItem[];
+  riskScore: number;
+  riskLabel: string;
+  detectedLinks: LinkScanResult[];
+  spellingErrors: SpellingError[];
+  gemini: GeminiAnalysis | null;
+}
+
+// ─── Data ────────────────────────────────────────────────────────────────
+
 const DISPOSABLE_DOMAINS = new Set([
   "tempmail.com", "throwaway.email", "guerrillamail.com", "mailinator.com",
   "yopmail.com", "10minutemail.com", "trashmail.com", "sharklasers.com",
   "guerrillamailblock.com", "grr.la", "dispostable.com", "temp-mail.org",
-  "fakeinbox.com", "maildrop.cc", "harakirimail.com",
+  "fakeinbox.com", "maildrop.cc", "harakirimail.com", "getairmail.com",
+  "mailnesia.com", "tempail.com", "tempmailaddress.com", "throwam.com",
+  "mohmal.com", "emailondeck.com", "crazymailing.com",
 ]);
 
 const REPUTABLE_PROVIDERS = new Set([
   "gmail.com", "outlook.com", "hotmail.com", "yahoo.com", "protonmail.com",
   "icloud.com", "aol.com", "zoho.com", "fastmail.com", "tutanota.com",
   "live.com", "msn.com", "pm.me", "proton.me", "yahoo.fr", "orange.fr",
-  "free.fr", "sfr.fr", "laposte.net", "wanadoo.fr",
+  "free.fr", "sfr.fr", "laposte.net", "wanadoo.fr", "gmx.com", "gmx.fr",
+  "mail.com", "hey.com",
 ]);
 
-const PHISHING_KEYWORDS = [
-  "urgent", "compte suspendu", "verifiez", "cliquez ici", "mot de passe expire",
-  "votre compte", "confirmer", "immediatement", "securite compromise",
-  "activite suspecte", "mise a jour requise", "felicitations", "gagnant",
-  "loterie", "heritage", "prince", "virement", "carte bancaire", "paypal",
-  "apple id", "netflix", "amazon", "remboursement",
+const URGENCY_PATTERNS = [
+  /urgent/i, /immediat/i, /immédiat/i, /vite/i, /rapidement/i,
+  /dernier\s*(avis|rappel|chance|delai)/i, /expire/i, /expir[ée]/i,
+  /24\s*h/i, /48\s*h/i, /72\s*h/i, /\d+\s*heure/i, /\d+\s*jour/i,
+  /dans\s*les\s*\d+/i, /avant\s*(le|la|qu)/i, /sans\s*delai/i,
+  /agir\s*maintenant/i, /agissez/i, /ne\s*tardez\s*pas/i,
+  /temps\s*(limit[ée]|restant)/i, /compte\s*a\s*rebours/i,
+  /suspension\s*(imminent|definitiv|automat)/i,
+  /desactiv(er|ation|é)/i, /sera\s*(supprim|bloqu|ferm|desactiv)/i,
+  /dernier\s*avertissement/i, /derniere\s*notification/i,
+  /action\s*requise/i, /action\s*immediate/i,
+  /plus\s*que\s*\d+/i, /fermeture/i, /cloture/i,
+  /repondez\s*(vite|rapidement|immediatement)/i,
 ];
 
-// Common French misspellings found in phishing emails
-const SPELLING_DICT: Record<string, string> = {
-  "securité": "securite", "vérifié": "verifie", "comptes": "compte",
-  "urjent": "urgent", "imédiatement": "immediatement", "connecxion": "connexion",
-  "authantification": "authentification", "confidentiel": "confidentiel",
-  "mot de pase": "mot de passe", "conection": "connexion", "conexion": "connexion",
-  "identifian": "identifiant", "identifient": "identifiant", "informations personnel": "informations personnelles",
-  "coordonées": "coordonnees", "coordonees": "coordonnees",
-  "rembourssement": "remboursement", "remboursment": "remboursement",
-  "cliquer": "cliquez", "veuiller": "veuillez", "veullier": "veuillez",
-  "banquaire": "bancaire", "banquere": "bancaire",
-  "suspencion": "suspension", "suspenssion": "suspension",
-  "activitée": "activite", "activiter": "activite",
-  "confirmer votre compte": "confirmer votre compte",
-  "resoudre": "resoudre", "problemes": "problemes",
-  "payement": "paiement", "payemant": "paiement",
-  "echeance": "echeance", "echeence": "echeance",
-  "expediteur": "expediteur", "destinataire": "destinataire",
-  "reclamation": "reclamation", "reclammation": "reclamation",
-};
+const PHISHING_KEYWORDS = [
+  "compte suspendu", "verifiez", "vérifiez", "cliquez ici", "mot de passe expire",
+  "votre compte", "confirmer votre", "securite compromise", "sécurité compromise",
+  "activite suspecte", "activité suspecte", "mise a jour requise",
+  "felicitations", "félicitations", "gagnant", "loterie", "heritage", "héritage",
+  "prince", "virement", "carte bancaire", "paypal", "apple id", "netflix",
+  "amazon", "remboursement", "reclamation", "réclamation",
+  "cliquez sur le lien", "lien ci-dessous", "connectez-vous",
+  "identifiant", "reinitialiser", "réinitialiser",
+  "cher client", "chere cliente", "cher utilisateur",
+  "votre colis", "livraison echouee", "livraison échouée",
+  "facture impayee", "facture impayée", "paiement refuse",
+  "amende", "contravention", "impot", "impôt",
+  "votre commande", "remboursement en attente",
+  "gagner", "beneficiaire", "bénéficiaire", "transfert de fonds",
+  "informations personnelles", "donnees personnelles",
+  "verifier votre identite", "vérifier votre identité",
+  "debloquer", "débloquer", "restaurer votre acces",
+  "acces restreint", "accès restreint", "acces bloque",
+  "conformite", "mise en conformite",
+  "regularisation", "régularisation",
+  "offre speciale", "offre exclusive", "offre limitee",
+  "gratuit", "100%", "sans frais",
+];
 
-// Real common typos in phishing
+const PERSONAL_INFO_PATTERNS = [
+  /mot de passe/i, /password/i, /numero de carte/i, /numéro de carte/i,
+  /code secret/i, /cvv/i, /cvc/i, /\bpin\b/i, /identifiant/i,
+  /coordonn[ée]es?\s*bancaire/i, /\brib\b/i, /\biban\b/i,
+  /num[eé]ro\s*de\s*s[eé]curit[eé]/i, /carte\s*(vitale|d'identit)/i,
+  /date\s*de\s*naissance/i, /pi[eè]ce\s*d'identit/i,
+  /passeport/i, /permis\s*de\s*conduire/i,
+  /code\s*de\s*v[eé]rification/i, /code\s*sms/i, /code\s*otp/i,
+  /num[eé]ro\s*de\s*t[eé]l[eé]phone/i,
+];
+
 const PHISHING_TYPOS: { pattern: RegExp; word: string; suggestion: string }[] = [
   { pattern: /\bconexion\b/gi, word: "conexion", suggestion: "connexion" },
   { pattern: /\bconnecxion\b/gi, word: "connecxion", suggestion: "connexion" },
@@ -96,228 +134,359 @@ const PHISHING_TYPOS: { pattern: RegExp; word: string; suggestion: string }[] = 
   { pattern: /\bcoordonées\b/gi, word: "coordonees", suggestion: "coordonnees" },
   { pattern: /\bactivitée\b/gi, word: "activitee", suggestion: "activite" },
   { pattern: /\becheence\b/gi, word: "echeence", suggestion: "echeance" },
-  { pattern: /\bsécurite\b/gi, word: "securite", suggestion: "securite" },
   { pattern: /\bmot de pase\b/gi, word: "mot de pase", suggestion: "mot de passe" },
+  { pattern: /\bverifi[ée]\b/gi, word: "verifié", suggestion: "verifie" },
+  { pattern: /\binformations personnel\b/gi, word: "informations personnel", suggestion: "informations personnelles" },
+  { pattern: /\bsécurite\b/gi, word: "securite", suggestion: "securite" },
 ];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────
 
 function extractUrls(text: string): string[] {
   const urlRegex = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi;
-  const matches = text.match(urlRegex) || [];
-  return [...new Set(matches)];
+  return [...new Set(text.match(urlRegex) || [])];
 }
 
 function detectSpellingErrors(text: string): SpellingError[] {
   const errors: SpellingError[] = [];
   const lowerText = text.toLowerCase();
-
   for (const typo of PHISHING_TYPOS) {
     const match = typo.pattern.exec(lowerText);
     if (match) {
       const idx = match.index;
-      const start = Math.max(0, idx - 20);
-      const end = Math.min(text.length, idx + match[0].length + 20);
-      const context = "..." + text.slice(start, end).trim() + "...";
+      const start = Math.max(0, idx - 25);
+      const end = Math.min(text.length, idx + match[0].length + 25);
       errors.push({
         word: match[0],
         suggestion: typo.suggestion,
-        context,
+        context: "..." + text.slice(start, end).trim() + "...",
+      });
+    }
+  }
+  // Cyrillic homoglyph detection
+  const cyrillicMatches = text.match(/[\u0400-\u04FF]/g);
+  if (cyrillicMatches && cyrillicMatches.length > 0 && cyrillicMatches.length < 20) {
+    errors.push({
+      word: "Caracteres cyrilliques detectes",
+      suggestion: "Attaque par homoglyphes possible (lettres similaires d'un autre alphabet)",
+      context: `${cyrillicMatches.length} caractere(s) cyrillique(s) dans un texte latin`,
+    });
+  }
+  return errors;
+}
+
+function scanLink(url: string): LinkScanResult {
+  const suspiciousShorteners = ["bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "rb.gy", "cutt.ly", "shorturl.at"];
+  const dangerousTLDs = [".xyz", ".top", ".click", ".loan", ".tk", ".ml", ".ga", ".cf", ".gq", ".work", ".buzz", ".info", ".pw"];
+  const phishingUrlKeywords = ["login", "signin", "verify", "account", "update", "secure", "bank", "paypal", "netflix", "confirm", "validate", "restore", "unlock", "webscr", "cmd=", "redirect"];
+
+  const threats: string[] = [];
+  const lowerUrl = url.toLowerCase();
+
+  if (/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url)) threats.push("URL avec adresse IP directe — tres suspect");
+  if (suspiciousShorteners.some(d => lowerUrl.includes(d))) threats.push("Raccourcisseur d'URL — masque la destination reelle");
+  if (dangerousTLDs.some(t => lowerUrl.includes(t))) threats.push("Extension de domaine souvent utilisee pour le phishing");
+  if (phishingUrlKeywords.some(k => lowerUrl.includes(k))) threats.push("Mots-cles de phishing dans l'URL");
+  if ((url.match(/-/g) || []).length > 3) threats.push("Nombre excessif de tirets dans le domaine");
+  if ((url.match(/\./g) || []).length > 4) threats.push("Nombre excessif de sous-domaines");
+  if (lowerUrl.includes("@")) threats.push("Caractere @ dans l'URL — technique de masquage");
+  if (/https?:\/\/[^/]*\d{5,}/.test(url)) threats.push("Suite de chiffres dans le domaine — suspect");
+  // Check if it looks like it's impersonating a real domain
+  const fakePatterns = ["paypal", "google", "apple", "microsoft", "amazon", "netflix", "facebook", "instagram", "whatsapp", "dhl", "laposte", "colissimo", "chronopost", "ameli", "impots", "caf", "cpam"];
+  for (const brand of fakePatterns) {
+    if (lowerUrl.includes(brand) && !lowerUrl.includes(`${brand}.com`) && !lowerUrl.includes(`${brand}.fr`) && !lowerUrl.includes(`${brand}.net`)) {
+      threats.push(`Potentielle usurpation de "${brand}" — le domaine ne correspond pas au site officiel`);
+      break;
+    }
+  }
+
+  return { url, safe: threats.length === 0, threats };
+}
+
+// ─── Gemini API ──────────────────────────────────────────────────────────
+
+async function analyzeWithGemini(email: string, content: string): Promise<GeminiAnalysis | null> {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  const prompt = `Tu es un expert en cybersecurite specialise dans la detection de phishing et de scam par email.
+
+Analyse cet email de maniere TRES rigoureuse :
+
+**Expediteur :** ${email}
+**Contenu du mail :**
+${content || "(pas de contenu fourni)"}
+
+Reponds UNIQUEMENT en JSON valide, sans markdown, sans backticks, avec cette structure exacte :
+{
+  "verdict": "safe" | "suspicious" | "dangerous",
+  "confidence": nombre entre 0 et 100,
+  "summary": "resume en 1-2 phrases de ton analyse",
+  "details": ["point d'analyse 1", "point d'analyse 2", ...],
+  "tactics": ["tactique de manipulation detectee 1", ...]
+}
+
+Regles strictes :
+- Sois TRES suspicieux. Un vrai email de service client n'a pas besoin d'urgence, de menaces ou de liens.
+- Detecte les tactiques : urgence, peur, appat du gain, usurpation d'identite, social engineering.
+- Analyse le domaine de l'expediteur (est-ce un vrai domaine d'entreprise ?).
+- Analyse les URLs dans le contenu.
+- Si le contenu demande des infos sensibles (mdp, CB, code...), c'est TOUJOURS du phishing.
+- Si le contenu cree de l'urgence + demande une action, c'est probablement du phishing.
+- Reponds en francais.`;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 1024,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) return null;
+
+    // Clean response: remove markdown code blocks if present
+    const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
+    const parsed = JSON.parse(cleaned);
+
+    return {
+      verdict: parsed.verdict || "suspicious",
+      confidence: parsed.confidence || 50,
+      summary: parsed.summary || "",
+      details: parsed.details || [],
+      tactics: parsed.tactics || [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ─── Main analysis ───────────────────────────────────────────────────────
+
+function analyzeEmail(email: string, content: string): Omit<EmailAnalysis, "gemini"> {
+  const checks: CheckItem[] = [];
+  let riskPoints = 0;
+  const lowerContent = content.toLowerCase();
+  const hasContent = content.trim().length > 0;
+
+  // === URGENCY (priority 0 — always first) ===
+  if (hasContent) {
+    const urgencyMatches = URGENCY_PATTERNS.filter(p => p.test(content));
+    if (urgencyMatches.length > 0) {
+      checks.push({
+        label: "Sentiment d'urgence",
+        status: urgencyMatches.length >= 3 ? "fail" : "warn",
+        detail: `${urgencyMatches.length} indicateur(s) d'urgence detecte(s). Les emails de phishing creent de la pression pour vous empecher de reflechir.`,
+        fix: "Ne cedez JAMAIS a l'urgence d'un email. Les services legitimes vous laissent toujours le temps de reagir. C'est la technique de manipulation #1 des arnaqueurs.",
+        priority: 0,
+      });
+      riskPoints += urgencyMatches.length >= 3 ? 25 : 12;
+    } else {
+      checks.push({
+        label: "Sentiment d'urgence",
+        status: "pass",
+        detail: "Pas de pression temporelle detectee.",
+        priority: 0,
       });
     }
   }
 
-  // Check for mixed character sets (cyrillic in latin text - homoglyph attack)
-  const cyrillicRegex = /[\u0400-\u04FF]/g;
-  const cyrillicMatches = text.match(cyrillicRegex);
-  if (cyrillicMatches && cyrillicMatches.length > 0 && cyrillicMatches.length < 20) {
-    errors.push({
-      word: "Caracteres cyrilliques detectes",
-      suggestion: "Ceci pourrait etre une attaque par homoglyphes (lettres similaires d'un autre alphabet)",
-      context: `${cyrillicMatches.length} caractere(s) cyrillique(s) dans un texte latin`,
-    });
+  // === PERSONAL INFO REQUEST (priority 1) ===
+  if (hasContent) {
+    const infoMatches = PERSONAL_INFO_PATTERNS.filter(p => p.test(content));
+    if (infoMatches.length > 0) {
+      checks.push({
+        label: "Demande d'informations sensibles",
+        status: "fail",
+        detail: `Le message demande des informations sensibles (${infoMatches.length} type(s) detecte(s) : mot de passe, coordonnees bancaires, code, etc.).`,
+        fix: "JAMAIS un service legitime ne vous demandera votre mot de passe, vos coordonnees bancaires ou un code par email. C'est du phishing a 100%.",
+        priority: 1,
+      });
+      riskPoints += 35;
+    }
   }
 
-  return errors;
-}
-
-function simulateLinkScan(url: string): LinkScanResult {
-  const suspiciousDomains = ["bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd"];
-  const dangerousTLDs = [".xyz", ".top", ".click", ".loan", ".tk", ".ml", ".ga", ".cf"];
-  const phishingKeywords = ["login", "signin", "verify", "account", "update", "secure", "bank", "paypal", "netflix"];
-
-  let flagged = 0;
-  const totalEngines = 70;
-  const threats: string[] = [];
-
-  const lowerUrl = url.toLowerCase();
-  const isSuspiciousShortener = suspiciousDomains.some(d => lowerUrl.includes(d));
-  const hasDangerousTLD = dangerousTLDs.some(t => lowerUrl.includes(t));
-  const hasPhishingKeyword = phishingKeywords.some(k => lowerUrl.includes(k));
-  const hasIPAddress = /https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url);
-
-  if (hasIPAddress) { flagged += 8; threats.push("URL utilisant une adresse IP directe"); }
-  if (isSuspiciousShortener) { flagged += 3; threats.push("Raccourcisseur d'URL suspect"); }
-  if (hasDangerousTLD) { flagged += 5; threats.push("Extension de domaine dangereuse"); }
-  if (hasPhishingKeyword) { flagged += 4; threats.push("Mots-cles de phishing dans l'URL"); }
-
-  if (flagged === 0 && Math.random() > 0.8) {
-    flagged = 1;
-    threats.push("Detection heuristique");
+  // === PHISHING KEYWORDS (priority 2) ===
+  if (hasContent) {
+    const foundKeywords = PHISHING_KEYWORDS.filter(kw => lowerContent.includes(kw));
+    const uniqueKeywords = [...new Set(foundKeywords)];
+    if (uniqueKeywords.length > 0) {
+      checks.push({
+        label: "Mots-cles suspects",
+        status: uniqueKeywords.length >= 4 ? "fail" : uniqueKeywords.length >= 2 ? "warn" : "warn",
+        detail: `${uniqueKeywords.length} mots-cles suspects : "${uniqueKeywords.slice(0, 5).join('", "')}".${uniqueKeywords.length > 5 ? ` Et ${uniqueKeywords.length - 5} autres.` : ""}`,
+        fix: "Les emails de phishing utilisent des termes alarmistes et des formulations generiques. Un service reel s'adresse a vous par votre nom et n'utilise pas de menaces.",
+        priority: 2,
+      });
+      riskPoints += uniqueKeywords.length >= 4 ? 25 : uniqueKeywords.length >= 2 ? 15 : 8;
+    } else {
+      checks.push({
+        label: "Mots-cles suspects",
+        status: "pass",
+        detail: "Aucun mot-cle de phishing detecte.",
+        priority: 2,
+      });
+    }
   }
 
-  return {
-    url,
-    safe: flagged === 0,
-    engines: totalEngines,
-    flagged,
-    threats,
-  };
-}
+  // === LINK ANALYSIS (priority 3) ===
+  let detectedLinks: LinkScanResult[] = [];
+  if (hasContent) {
+    const urls = extractUrls(content);
+    if (urls.length > 0) {
+      detectedLinks = urls.map(u => scanLink(u));
+      const dangerousLinks = detectedLinks.filter(l => !l.safe);
+      checks.push({
+        label: "Liens detectes — analyse heuristique",
+        status: dangerousLinks.length > 0 ? "fail" : urls.length > 5 ? "warn" : "pass",
+        detail: `${urls.length} lien(s) detecte(s). ${dangerousLinks.length > 0 ? `${dangerousLinks.length} lien(s) signale(s) comme suspects.` : "Aucun indicateur de danger detecte."}`,
+        fix: dangerousLinks.length > 0 ? "NE CLIQUEZ PAS sur les liens signales. Survolez pour verifier l'URL reelle. Allez directement sur le site officiel en tapant l'adresse." : undefined,
+        priority: 3,
+      });
+      if (dangerousLinks.length > 0) riskPoints += 25;
+      else if (urls.length > 5) riskPoints += 5;
+    }
+  }
 
-function analyzeEmail(email: string, content: string): EmailAnalysis {
-  const checks: EmailAnalysis["checks"] = [];
-  let riskPoints = 0;
-
-  // 1. Format check
+  // === FORMAT CHECK (priority 5) ===
   const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
   const isValidFormat = emailRegex.test(email);
   checks.push({
     label: "Format de l'email",
     status: isValidFormat ? "pass" : "fail",
     detail: isValidFormat ? "Le format de l'adresse email est valide (RFC 5322)." : "Le format de l'adresse email est invalide.",
-    fix: isValidFormat ? undefined : "Verifiez que l'adresse contient un @ suivi d'un domaine valide (ex: nom@domaine.com).",
+    fix: isValidFormat ? undefined : "Verifiez que l'adresse contient un @ suivi d'un domaine valide.",
+    priority: 5,
   });
-  if (!isValidFormat) riskPoints += 40;
+  if (!isValidFormat) riskPoints += 30;
 
   const domain = email.split("@")[1]?.toLowerCase() || "";
 
-  // 2. Disposable check
+  // === DISPOSABLE CHECK (priority 4) ===
   const isDisposable = DISPOSABLE_DOMAINS.has(domain);
   checks.push({
     label: "Email jetable",
     status: isDisposable ? "fail" : "pass",
-    detail: isDisposable
-      ? `Le domaine "${domain}" est un service d'email jetable/temporaire.`
-      : "Ce n'est pas un domaine d'email jetable connu.",
-    fix: isDisposable ? "N'interagissez JAMAIS avec des emails provenant de services jetables. Ne cliquez sur aucun lien et ne repondez pas." : undefined,
+    detail: isDisposable ? `"${domain}" est un service d'email jetable/temporaire.` : "Ce n'est pas un domaine d'email jetable connu.",
+    fix: isDisposable ? "N'interagissez JAMAIS avec des emails provenant de services jetables." : undefined,
+    priority: 4,
   });
   if (isDisposable) riskPoints += 30;
 
-  // 3. Reputable provider
+  // === REPUTABLE (priority 6) ===
   const isReputable = REPUTABLE_PROVIDERS.has(domain);
   checks.push({
     label: "Fournisseur reconnu",
     status: isReputable ? "pass" : "warn",
-    detail: isReputable
-      ? `"${domain}" est un fournisseur d'email reconnu et fiable.`
-      : `"${domain}" n'est pas un fournisseur grand public. Soyez vigilant.`,
-    fix: isReputable ? undefined : "Verifiez l'identite de l'expediteur par un autre canal (telephone, site officiel) avant de faire confiance.",
+    detail: isReputable ? `"${domain}" est un fournisseur d'email reconnu.` : `"${domain}" n'est pas un fournisseur grand public. Soyez vigilant.`,
+    fix: isReputable ? undefined : "Verifiez l'identite de l'expediteur par un autre canal avant de faire confiance.",
+    priority: 6,
   });
   if (!isReputable && !isDisposable) riskPoints += 10;
 
-  // 4. TLD check
-  const suspiciousTLDs = [".xyz", ".top", ".click", ".loan", ".work", ".gq", ".ml", ".tk", ".cf", ".ga"];
-  const hasSuspiciousTLD = suspiciousTLDs.some((tld) => domain.endsWith(tld));
+  // === TLD CHECK (priority 7) ===
+  const suspiciousTLDs = [".xyz", ".top", ".click", ".loan", ".work", ".gq", ".ml", ".tk", ".cf", ".ga", ".buzz", ".pw", ".info"];
+  const hasSuspiciousTLD = suspiciousTLDs.some(tld => domain.endsWith(tld));
   checks.push({
     label: "Extension de domaine (TLD)",
     status: hasSuspiciousTLD ? "warn" : "pass",
-    detail: hasSuspiciousTLD
-      ? "L'extension de domaine est souvent associee a du spam ou du phishing."
-      : "L'extension de domaine est standard.",
-    fix: hasSuspiciousTLD ? "Les domaines en .xyz, .tk, .ml etc. sont souvent gratuits et abuses par les spammeurs. Mefiez-vous." : undefined,
+    detail: hasSuspiciousTLD ? "Extension souvent associee au spam/phishing." : "Extension de domaine standard.",
+    fix: hasSuspiciousTLD ? "Les domaines en .xyz, .tk, .ml etc. sont gratuits et abuses par les spammeurs." : undefined,
+    priority: 7,
   });
   if (hasSuspiciousTLD) riskPoints += 15;
 
-  // 5. Typosquatting
-  const typosquatDomains = ["gmali.com", "gmai.com", "gogle.com", "yahooo.com", "outloock.com", "hotmai.com", "gmial.com", "gomail.com", "protonmial.com"];
+  // === TYPOSQUATTING (priority 3) ===
+  const typosquatDomains = ["gmali.com", "gmai.com", "gogle.com", "yahooo.com", "outloock.com", "hotmai.com", "gmial.com", "gomail.com", "protonmial.com", "outlok.com", "yaho.com", "googlé.com", "microsft.com", "aple.com", "amazn.com"];
   const isTyposquat = typosquatDomains.includes(domain);
-  checks.push({
-    label: "Typosquatting",
-    status: isTyposquat ? "fail" : "pass",
-    detail: isTyposquat
-      ? "Ce domaine ressemble a un domaine legitime mais avec une faute de frappe. Technique de phishing classique !"
-      : "Aucune tentative de typosquatting detectee.",
-    fix: isTyposquat ? "C'est du PHISHING ! Le domaine imite un service connu. Ne cliquez sur aucun lien. Signalez l'email comme spam et supprimez-le." : undefined,
-  });
-  if (isTyposquat) riskPoints += 35;
+  if (isTyposquat) {
+    checks.push({
+      label: "Typosquatting",
+      status: "fail",
+      detail: "Ce domaine imite un domaine legitime avec une faute de frappe. Technique de phishing classique !",
+      fix: "C'est du PHISHING ! Le domaine imite un service connu. Ne cliquez sur aucun lien. Signalez et supprimez.",
+      priority: 3,
+    });
+    riskPoints += 35;
+  }
 
-  // Content analysis
-  let detectedLinks: LinkScanResult[] = [];
+  // === SPELLING ERRORS (priority 5) ===
   let spellingErrors: SpellingError[] = [];
-
-  if (content.trim()) {
-    const lowerContent = content.toLowerCase();
-
-    // 6. Phishing keywords
-    const foundKeywords = PHISHING_KEYWORDS.filter((kw) => lowerContent.includes(kw));
-    checks.push({
-      label: "Mots-cles suspects",
-      status: foundKeywords.length > 2 ? "fail" : foundKeywords.length > 0 ? "warn" : "pass",
-      detail: foundKeywords.length > 0
-        ? `${foundKeywords.length} mots-cles suspects : "${foundKeywords.slice(0, 4).join('", "')}".`
-        : "Aucun mot-cle suspect detecte.",
-      fix: foundKeywords.length > 0 ? "Les emails de phishing utilisent des termes alarmistes. Un service legitime ne vous demandera jamais votre mot de passe par email." : undefined,
-    });
-    if (foundKeywords.length > 2) riskPoints += 25;
-    else if (foundKeywords.length > 0) riskPoints += 10;
-
-    // 7. Urgency detection
-    const hasUrgency = /urgent|immediat|vite|dernier|delai|expire|24h|48h|heures/i.test(content);
-    checks.push({
-      label: "Sentiment d'urgence",
-      status: hasUrgency ? "warn" : "pass",
-      detail: hasUrgency
-        ? "Le message cree un sentiment d'urgence. Technique de manipulation classique."
-        : "Pas de pression temporelle detectee.",
-      fix: hasUrgency ? "Ne cedez JAMAIS a l'urgence d'un email. Les services legitimes vous laissent toujours le temps de reagir. Prenez le temps de verifier." : undefined,
-    });
-    if (hasUrgency) riskPoints += 10;
-
-    // 8. Link detection & VT scan
-    const urls = extractUrls(content);
-    if (urls.length > 0) {
-      detectedLinks = urls.map(u => simulateLinkScan(u));
-      const dangerousLinks = detectedLinks.filter(l => !l.safe);
-      checks.push({
-        label: "Liens detectes",
-        status: dangerousLinks.length > 0 ? "fail" : urls.length > 3 ? "warn" : "pass",
-        detail: `${urls.length} lien(s) detecte(s). ${dangerousLinks.length > 0 ? `${dangerousLinks.length} lien(s) signale(s) comme dangereux par VirusTotal.` : "Tous les liens semblent sains."}`,
-        fix: dangerousLinks.length > 0 ? "NE CLIQUEZ PAS sur les liens signales. Survolez-les pour verifier l'URL reelle. En cas de doute, allez directement sur le site officiel en tapant l'adresse dans votre navigateur." : undefined,
-      });
-      if (dangerousLinks.length > 0) riskPoints += 25;
-      else if (urls.length > 3) riskPoints += 5;
-    }
-
-    // 9. Spelling errors detection
+  if (hasContent) {
     spellingErrors = detectSpellingErrors(content);
     if (spellingErrors.length > 0) {
       checks.push({
         label: "Fautes d'orthographe",
         status: spellingErrors.length > 2 ? "fail" : "warn",
-        detail: `${spellingErrors.length} faute(s) d'orthographe detectee(s). Les emails de phishing contiennent souvent des erreurs.`,
-        fix: "Les entreprises legitimes envoient des emails relus et corriges. De nombreuses fautes d'orthographe sont un signal d'alerte majeur.",
+        detail: `${spellingErrors.length} faute(s) detectee(s). Les emails de phishing contiennent souvent des erreurs.`,
+        fix: "Les entreprises legitimes envoient des emails relus et corriges. De nombreuses fautes = signal d'alerte majeur.",
+        priority: 5,
       });
-      if (spellingErrors.length > 2) riskPoints += 20;
-      else riskPoints += 8;
+      riskPoints += spellingErrors.length > 2 ? 20 : 8;
     } else if (content.trim().length > 20) {
       checks.push({
         label: "Fautes d'orthographe",
         status: "pass",
-        detail: "Aucune faute d'orthographe suspecte detectee dans le contenu.",
+        detail: "Aucune faute suspecte detectee.",
+        priority: 5,
       });
-    }
-
-    // 10. Personal info request
-    const asksPersonalInfo = /mot de passe|numero de carte|code secret|cvv|pin|identifiant|coordonnees bancaires|rib|iban/i.test(content);
-    if (asksPersonalInfo) {
-      checks.push({
-        label: "Demande d'infos sensibles",
-        status: "fail",
-        detail: "Le message demande des informations sensibles (mot de passe, carte bancaire, etc.).",
-        fix: "JAMAIS un service legitime ne vous demandera votre mot de passe ou vos coordonnees bancaires par email. C'est du phishing a 100%.",
-      });
-      riskPoints += 30;
     }
   }
+
+  // === GENERIC GREETING (priority 4) ===
+  if (hasContent) {
+    const genericGreeting = /cher\s*(client|utilisateur|membre|monsieur|madame)|bonjour\s*,\s*$/im.test(content);
+    if (genericGreeting) {
+      checks.push({
+        label: "Formule generique",
+        status: "warn",
+        detail: "L'email utilise une formule d'adresse generique au lieu de votre nom. Les vrais services connaissent votre identite.",
+        fix: "Un service chez lequel vous avez un compte s'adressera toujours a vous par votre nom et prenom.",
+        priority: 4,
+      });
+      riskPoints += 8;
+    }
+  }
+
+  // === IMPERSONATION (priority 2) ===
+  if (hasContent) {
+    const brands = ["paypal", "google", "apple", "microsoft", "amazon", "netflix", "facebook", "instagram", "la poste", "colissimo", "chronopost", "ameli", "impots", "caf", "edf", "engie", "free", "orange", "sfr", "bouygues"];
+    const mentionedBrands = brands.filter(b => lowerContent.includes(b));
+    if (mentionedBrands.length > 0) {
+      const brandInDomain = mentionedBrands.some(b => domain.includes(b));
+      if (!brandInDomain && !isReputable) {
+        checks.push({
+          label: "Usurpation d'identite possible",
+          status: "fail",
+          detail: `Le mail mentionne "${mentionedBrands.join('", "')}" mais l'expediteur ("${domain}") n'est pas le domaine officiel de ces services.`,
+          fix: "Un email officiel de ${mentionedBrands[0]} viendrait d'un domaine @${mentionedBrands[0]}.com/.fr. Allez sur le site officiel directement.",
+          priority: 2,
+        });
+        riskPoints += 25;
+      }
+    }
+  }
+
+  // Sort checks: fail first, then warn, then pass, within same status by priority
+  checks.sort((a, b) => {
+    const statusOrder = { fail: 0, warn: 1, pass: 2 };
+    const sa = statusOrder[a.status];
+    const sb = statusOrder[b.status];
+    if (sa !== sb) return sa - sb;
+    return a.priority - b.priority;
+  });
 
   const riskScore = Math.min(100, riskPoints);
   let riskLabel = "Faible risque";
@@ -327,24 +496,54 @@ function analyzeEmail(email: string, content: string): EmailAnalysis {
   return { email, isValid: isValidFormat, checks, riskScore, riskLabel, detectedLinks, spellingErrors };
 }
 
+// ─── Component ───────────────────────────────────────────────────────────
+
 export function EmailChecker() {
   const [email, setEmail] = useState("");
   const [content, setContent] = useState("");
   const [result, setResult] = useState<EmailAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [geminiLoading, setGeminiLoading] = useState(false);
   const [showLinks, setShowLinks] = useState(false);
   const [showSpelling, setShowSpelling] = useState(false);
 
-  const handleAnalyze = () => {
+  const hasGeminiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
+
+  const handleAnalyze = async () => {
     if (!email) return;
     setAnalyzing(true);
     setResult(null);
     setShowLinks(false);
     setShowSpelling(false);
-    setTimeout(() => {
-      setResult(analyzeEmail(email, content));
-      setAnalyzing(false);
-    }, 1500);
+
+    // Local analysis (instant)
+    const localResult = analyzeEmail(email, content);
+    setResult({ ...localResult, gemini: null });
+    setAnalyzing(false);
+
+    // Gemini analysis (async)
+    if (hasGeminiKey && (content.trim() || email)) {
+      setGeminiLoading(true);
+      try {
+        const gemini = await analyzeWithGemini(email, content);
+        setResult(prev => prev ? { ...prev, gemini } : null);
+        // Adjust risk score based on Gemini verdict
+        if (gemini) {
+          setResult(prev => {
+            if (!prev) return null;
+            let bonus = 0;
+            if (gemini.verdict === "dangerous") bonus = 25;
+            else if (gemini.verdict === "suspicious") bonus = 10;
+            const newScore = Math.min(100, prev.riskScore + bonus);
+            let newLabel = "Faible risque";
+            if (newScore >= 60) newLabel = "Risque eleve";
+            else if (newScore >= 30) newLabel = "Risque moyen";
+            return { ...prev, riskScore: newScore, riskLabel: newLabel };
+          });
+        }
+      } catch { /* ignore */ }
+      finally { setGeminiLoading(false); }
+    }
   };
 
   const getRiskColor = (score: number) => {
@@ -353,13 +552,31 @@ export function EmailChecker() {
     return "#ef4444";
   };
 
+  const getVerdictStyle = (verdict: string) => {
+    switch (verdict) {
+      case "dangerous": return { color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.2)", icon: AlertOctagon };
+      case "suspicious": return { color: "#f59e0b", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.2)", icon: AlertTriangle };
+      default: return { color: "#39ff14", bg: "rgba(57,255,20,0.08)", border: "rgba(57,255,20,0.2)", icon: CheckCircle };
+    }
+  };
+
+  const verdictLabel = (v: string) => {
+    switch (v) {
+      case "dangerous": return "DANGEREUX";
+      case "suspicious": return "SUSPECT";
+      default: return "PROBABLEMENT SUR";
+    }
+  };
+
   return (
     <div className="min-h-screen py-24">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6" style={{ background: "rgba(6,182,212,0.06)", border: "1px solid rgba(6,182,212,0.12)" }}>
             <Mail className="w-3.5 h-3.5 text-[#06b6d4]" />
-            <span className="text-[#06b6d4]" style={{ fontSize: "0.75rem", fontFamily: "JetBrains Mono, monospace" }}>Anti-phishing + VirusTotal</span>
+            <span className="text-[#06b6d4]" style={{ fontSize: "0.75rem", fontFamily: "JetBrains Mono, monospace" }}>
+              Heuristique locale{hasGeminiKey ? " + Gemini AI" : ""}
+            </span>
           </div>
           <h1 style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.8rem, 3vw, 2.2rem)" }} className="text-[#e2e8f0] mb-4">
             Verificateur d'{" "}
@@ -367,7 +584,7 @@ export function EmailChecker() {
           </h1>
           <p className="text-[#94a3b8] max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
             Collez l'integralite d'un email suspect pour une analyse complete : detection de phishing,
-            verification des liens via VirusTotal, fautes d'orthographe et demandes suspectes.
+            analyse heuristique des liens, fautes d'orthographe{hasGeminiKey ? " et analyse par intelligence artificielle" : ""}.
           </p>
         </motion.div>
 
@@ -402,7 +619,7 @@ export function EmailChecker() {
                 style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.85rem" }}
               />
               <p className="text-[#64748b] mt-1" style={{ fontSize: "0.75rem" }}>
-                Les liens seront automatiquement detectes et verifies via VirusTotal. Les fautes d'orthographe seront analysees.
+                Liens analyses par heuristique locale. Fautes d'orthographe verifiees.{hasGeminiKey ? " Analyse IA Gemini incluse." : ""}
               </p>
             </div>
 
@@ -424,37 +641,115 @@ export function EmailChecker() {
             {/* Risk score */}
             <div className="bg-[#111827] border border-[#06b6d4]/20 rounded-xl p-6 text-center">
               <p className="text-[#94a3b8] mb-2" style={{ fontSize: "0.85rem" }}>Score de risque</p>
-              <div
-                className="mb-2"
-                style={{
-                  fontFamily: "Orbitron, sans-serif",
-                  fontSize: "3.5rem",
-                  color: getRiskColor(result.riskScore),
-                }}
-              >
+              <div className="mb-2" style={{ fontFamily: "Orbitron, sans-serif", fontSize: "3.5rem", color: getRiskColor(result.riskScore) }}>
                 {result.riskScore}%
               </div>
               <span
                 className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full"
-                style={{
-                  fontSize: "0.85rem",
-                  color: getRiskColor(result.riskScore),
-                  backgroundColor: `${getRiskColor(result.riskScore)}15`,
-                }}
+                style={{ fontSize: "0.85rem", color: getRiskColor(result.riskScore), backgroundColor: `${getRiskColor(result.riskScore)}15` }}
               >
                 {result.riskScore < 30 ? <CheckCircle className="w-4 h-4" /> : result.riskScore < 60 ? <AlertTriangle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                 {result.riskLabel}
               </span>
+              {/* Fail/warn/pass summary */}
+              <div className="flex items-center justify-center gap-4 mt-3">
+                {(() => {
+                  const fails = result.checks.filter(c => c.status === "fail").length;
+                  const warns = result.checks.filter(c => c.status === "warn").length;
+                  const passes = result.checks.filter(c => c.status === "pass").length;
+                  return (
+                    <>
+                      {fails > 0 && <span className="text-[#ef4444] flex items-center gap-1" style={{ fontSize: "0.75rem" }}><XCircle className="w-3 h-3" />{fails} critique(s)</span>}
+                      {warns > 0 && <span className="text-[#f59e0b] flex items-center gap-1" style={{ fontSize: "0.75rem" }}><AlertTriangle className="w-3 h-3" />{warns} alerte(s)</span>}
+                      {passes > 0 && <span className="text-[#39ff14] flex items-center gap-1" style={{ fontSize: "0.75rem" }}><CheckCircle className="w-3 h-3" />{passes} OK</span>}
+                    </>
+                  );
+                })()}
+              </div>
             </div>
 
-            {/* Checks */}
+            {/* ═══ GEMINI AI ANALYSIS ═══ */}
+            {(geminiLoading || result.gemini) && (
+              <div
+                className="bg-[#111827] rounded-xl overflow-hidden"
+                style={{
+                  border: `1px solid ${result.gemini ? getVerdictStyle(result.gemini.verdict).border : "rgba(139,92,246,0.2)"}`,
+                }}
+              >
+                <div className="p-4 flex items-center gap-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(139,92,246,0.15)" }}>
+                    <Brain className="w-4 h-4 text-[#8b5cf6]" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[#e2e8f0]" style={{ fontSize: "0.9rem", fontFamily: "Orbitron, sans-serif" }}>Analyse IA — Gemini</p>
+                    <p className="text-[#64748b]" style={{ fontSize: "0.7rem" }}>Intelligence artificielle Google</p>
+                  </div>
+                  {result.gemini && (
+                    <span
+                      className="px-3 py-1 rounded-full flex items-center gap-1.5"
+                      style={{
+                        fontSize: "0.75rem",
+                        fontFamily: "Orbitron, sans-serif",
+                        color: getVerdictStyle(result.gemini.verdict).color,
+                        background: getVerdictStyle(result.gemini.verdict).bg,
+                      }}
+                    >
+                      {(() => { const S = getVerdictStyle(result.gemini!.verdict); return <S.icon className="w-3.5 h-3.5" />; })()}
+                      {verdictLabel(result.gemini.verdict)}
+                      <span className="opacity-60">({result.gemini.confidence}%)</span>
+                    </span>
+                  )}
+                </div>
+
+                {geminiLoading && !result.gemini && (
+                  <div className="p-6 flex items-center justify-center gap-3">
+                    <Loader2 className="w-5 h-5 text-[#8b5cf6] animate-spin" />
+                    <span className="text-[#94a3b8]" style={{ fontSize: "0.85rem" }}>Analyse IA en cours...</span>
+                  </div>
+                )}
+
+                {result.gemini && (
+                  <div className="p-4 space-y-4">
+                    {/* Summary */}
+                    <p className="text-[#e2e8f0]" style={{ fontSize: "0.85rem", lineHeight: 1.7 }}>{result.gemini.summary}</p>
+
+                    {/* Details */}
+                    {result.gemini.details.length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="text-[#94a3b8]" style={{ fontSize: "0.75rem", fontFamily: "Orbitron, sans-serif" }}>Points d'analyse</p>
+                        {result.gemini.details.map((d, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <Sparkles className="w-3 h-3 text-[#8b5cf6] flex-shrink-0 mt-1" />
+                            <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>{d}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Tactics */}
+                    {result.gemini.tactics.length > 0 && (
+                      <div className="bg-[#0a0a0f] rounded-lg p-3" style={{ border: "1px solid rgba(239,68,68,0.1)" }}>
+                        <p className="text-[#ef4444] mb-2" style={{ fontSize: "0.75rem", fontFamily: "Orbitron, sans-serif" }}>Tactiques de manipulation detectees</p>
+                        <div className="flex flex-wrap gap-2">
+                          {result.gemini.tactics.map((t, i) => (
+                            <span key={i} className="px-2 py-1 rounded-full bg-[#ef4444]/10 text-[#ef4444]" style={{ fontSize: "0.72rem" }}>{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Checks list (sorted: fail > warn > pass) */}
             <div className="space-y-3">
               {result.checks.map((check, i) => (
                 <motion.div
-                  key={check.label}
+                  key={`${check.label}-${i}`}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.06 }}
+                  transition={{ delay: i * 0.04 }}
                   className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl p-4"
                 >
                   <div className="flex items-start gap-3">
@@ -489,7 +784,7 @@ export function EmailChecker() {
               ))}
             </div>
 
-            {/* Detected Links VirusTotal Results */}
+            {/* Detected Links */}
             {result.detectedLinks.length > 0 && (
               <div className="bg-[#111827] border border-[#8b5cf6]/20 rounded-xl overflow-hidden">
                 <button
@@ -499,19 +794,19 @@ export function EmailChecker() {
                   <div className="flex items-center gap-2">
                     <Link2 className="w-5 h-5 text-[#8b5cf6]" />
                     <span className="text-[#e2e8f0]" style={{ fontSize: "0.9rem" }}>
-                      Liens verifies via VirusTotal ({result.detectedLinks.length})
+                      Liens detectes ({result.detectedLinks.length})
                     </span>
+                    {result.detectedLinks.some(l => !l.safe) && (
+                      <span className="px-2 py-0.5 rounded-full bg-[#ef4444]/10 text-[#ef4444]" style={{ fontSize: "0.65rem" }}>
+                        {result.detectedLinks.filter(l => !l.safe).length} dangereux
+                      </span>
+                    )}
                   </div>
                   {showLinks ? <ChevronUp className="w-4 h-4 text-[#64748b]" /> : <ChevronDown className="w-4 h-4 text-[#64748b]" />}
                 </button>
                 <AnimatePresence>
                   {showLinks && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                       <div className="p-4 pt-0 space-y-3">
                         {result.detectedLinks.map((link, i) => (
                           <div key={i} className="bg-[#0a0a0f] rounded-lg p-4">
@@ -521,26 +816,14 @@ export function EmailChecker() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-[#00d4ff] font-mono break-all" style={{ fontSize: "0.8rem" }}>{link.url}</p>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <span className="text-[#64748b]" style={{ fontSize: "0.75rem" }}>
-                                    {link.flagged}/{link.engines} moteurs
-                                  </span>
-                                  <span
-                                    className="px-2 py-0.5 rounded-full"
-                                    style={{
-                                      fontSize: "0.7rem",
-                                      color: link.safe ? "#39ff14" : "#ef4444",
-                                      background: link.safe ? "rgba(57,255,20,0.1)" : "rgba(239,68,68,0.1)",
-                                    }}
-                                  >
-                                    {link.safe ? "Sain" : "Dangereux"}
-                                  </span>
-                                </div>
+                                <span className="inline-block mt-1 px-2 py-0.5 rounded-full" style={{ fontSize: "0.7rem", color: link.safe ? "#39ff14" : "#ef4444", background: link.safe ? "rgba(57,255,20,0.1)" : "rgba(239,68,68,0.1)" }}>
+                                  {link.safe ? "Aucun indicateur suspect" : "Suspect"}
+                                </span>
                                 {link.threats.length > 0 && (
                                   <div className="mt-2 space-y-1">
                                     {link.threats.map((t, j) => (
                                       <p key={j} className="text-[#ef4444] flex items-center gap-1" style={{ fontSize: "0.75rem" }}>
-                                        <Bug className="w-3 h-3" /> {t}
+                                        <Bug className="w-3 h-3 flex-shrink-0" /> {t}
                                       </p>
                                     ))}
                                   </div>
@@ -566,36 +849,25 @@ export function EmailChecker() {
                   <div className="flex items-center gap-2">
                     <SpellCheck className="w-5 h-5 text-[#f59e0b]" />
                     <span className="text-[#e2e8f0]" style={{ fontSize: "0.9rem" }}>
-                      Fautes d'orthographe detectees ({result.spellingErrors.length})
+                      Fautes d'orthographe ({result.spellingErrors.length})
                     </span>
                   </div>
                   {showSpelling ? <ChevronUp className="w-4 h-4 text-[#64748b]" /> : <ChevronDown className="w-4 h-4 text-[#64748b]" />}
                 </button>
                 <AnimatePresence>
                   {showSpelling && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                       <div className="p-4 pt-0 space-y-3">
                         {result.spellingErrors.map((err, i) => (
                           <div key={i} className="bg-[#0a0a0f] rounded-lg p-3">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-[#ef4444] line-through font-mono" style={{ fontSize: "0.85rem" }}>{err.word}</span>
-                              <span className="text-[#64748b]">→</span>
+                              <span className="text-[#64748b]">&rarr;</span>
                               <span className="text-[#39ff14] font-mono" style={{ fontSize: "0.85rem" }}>{err.suggestion}</span>
                             </div>
                             <p className="text-[#64748b]" style={{ fontSize: "0.75rem" }}>{err.context}</p>
                           </div>
                         ))}
-                        <div className="bg-[#f59e0b]/5 border border-[#f59e0b]/20 rounded-lg p-3">
-                          <p className="text-[#f59e0b]" style={{ fontSize: "0.8rem" }}>
-                            Les fautes d'orthographe sont un indicateur important de phishing.
-                            Les entreprises legitimes releisent soigneusement leurs communications.
-                          </p>
-                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -603,14 +875,12 @@ export function EmailChecker() {
               </div>
             )}
 
-            {/* Global recommendation */}
+            {/* Actions */}
             {result.riskScore >= 30 && (
               <div className="bg-gradient-to-br from-[#111827] to-[#0f172a] border border-[#ef4444]/20 rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Shield className="w-5 h-5 text-[#ef4444]" />
-                  <h3 className="text-[#ef4444]" style={{ fontFamily: "Orbitron, sans-serif", fontSize: "0.95rem" }}>
-                    Actions recommandees
-                  </h3>
+                  <h3 className="text-[#ef4444]" style={{ fontFamily: "Orbitron, sans-serif", fontSize: "0.95rem" }}>Actions recommandees</h3>
                 </div>
                 <ul className="space-y-2">
                   {[

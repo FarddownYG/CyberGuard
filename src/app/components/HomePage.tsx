@@ -645,9 +645,9 @@ export function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             {[
               { value: "8", suffix: "+", label: "Outils disponibles", color: "#00d4ff" },
-              { value: "100", suffix: "%", label: "Uptime", color: "#39ff14" },
-              { value: "70", suffix: "+", label: "Moteurs AV", color: "#8b5cf6" },
-              { value: "24", suffix: "/7", label: "Monitoring", color: "#f59e0b" },
+              { value: "30", suffix: "+", label: "Articles blog", color: "#39ff14" },
+              { value: "70", suffix: "+", label: "Moteurs AV (via VT)", color: "#8b5cf6" },
+              { value: "0", suffix: "", label: "Donnees collectees", color: "#f59e0b" },
             ].map((s, i) => (
               <motion.div
                 key={s.label}

@@ -120,16 +120,16 @@ export function Footer() {
             </h4>
             <Link
               to="/status"
-              className="flex items-center gap-2.5 p-3 rounded-lg transition-all duration-300 group mb-4 hover:bg-[#39ff14]/5"
-              style={{ background: "rgba(57,255,20,0.03)", border: "1px solid rgba(57,255,20,0.1)" }}
+              className="flex items-center gap-2.5 p-3 rounded-lg transition-all duration-300 group mb-4 hover:bg-[#00d4ff]/5"
+              style={{ background: "rgba(0,212,255,0.03)", border: "1px solid rgba(0,212,255,0.1)" }}
             >
               <div className="relative">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#39ff14]" />
-                <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-[#39ff14] animate-ping opacity-30" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#00d4ff]" />
+                <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-[#00d4ff] animate-ping opacity-30" />
               </div>
               <div>
-                <p className="text-[#39ff14]" style={{ fontSize: "0.8rem" }}>Tous systemes operationnels</p>
-                <p className="text-[#64748b]" style={{ fontSize: "0.7rem" }}>Uptime 100%</p>
+                <p className="text-[#00d4ff]" style={{ fontSize: "0.8rem" }}>Voir le statut en direct</p>
+                <p className="text-[#64748b]" style={{ fontSize: "0.7rem" }}>Verifications temps reel</p>
               </div>
             </Link>
             <div className="p-3 rounded-lg" style={{ background: "rgba(0,212,255,0.03)", border: "1px solid rgba(0,212,255,0.08)" }}>

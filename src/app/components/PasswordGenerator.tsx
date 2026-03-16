@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from "react";
-import { Key, Copy, RefreshCw, Check, Eye, EyeOff, Shield, AlertTriangle, CheckCircle, XCircle, Search } from "lucide-react";
-import { motion } from "motion/react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { Key, Copy, RefreshCw, Check, Eye, EyeOff, Shield, AlertTriangle, CheckCircle, XCircle, Search, Loader2, Info, Lock, Hash, Type, Asterisk, ArrowRight, Clock, Zap, Wifi, WifiOff, Server } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import zxcvbn from "zxcvbn";
 
 const CHARSETS = {
   lowercase: "abcdefghijklmnopqrstuvwxyz",
@@ -9,129 +10,153 @@ const CHARSETS = {
   symbols: "!@#$%^&*()_+-=[]{}|;:',.<>?/~`",
 };
 
-function estimateCrackTime(password: string): { label: string; color: string } {
-  let poolSize = 0;
-  if (/[a-z]/.test(password)) poolSize += 26;
-  if (/[A-Z]/.test(password)) poolSize += 26;
-  if (/[0-9]/.test(password)) poolSize += 10;
-  if (/[^a-zA-Z0-9]/.test(password)) poolSize += 33;
-
-  const entropy = password.length * Math.log2(poolSize || 1);
-
-  if (entropy < 28) return { label: "Instantane", color: "#ef4444" };
-  if (entropy < 36) return { label: "Quelques minutes", color: "#ef4444" };
-  if (entropy < 50) return { label: "Quelques heures", color: "#f59e0b" };
-  if (entropy < 60) return { label: "Quelques jours", color: "#f59e0b" };
-  if (entropy < 70) return { label: "Quelques annees", color: "#00d4ff" };
-  if (entropy < 80) return { label: "Milliers d'annees", color: "#39ff14" };
-  return { label: "Incrackable", color: "#39ff14" };
+function translateCrackTime(display: string | number): string {
+  const s = String(display);
+  return s
+    .replace(/less than a second/gi, "moins d'une seconde")
+    .replace(/instant/gi, "instantane")
+    .replace(/(\d+)\s*seconds?/gi, "$1 seconde(s)")
+    .replace(/(\d+)\s*minutes?/gi, "$1 minute(s)")
+    .replace(/(\d+)\s*hours?/gi, "$1 heure(s)")
+    .replace(/(\d+)\s*days?/gi, "$1 jour(s)")
+    .replace(/(\d+)\s*months?/gi, "$1 mois")
+    .replace(/(\d+)\s*years?/gi, "$1 an(s)")
+    .replace(/centuries/gi, "des siecles");
 }
 
-function getStrength(password: string): { score: number; label: string; color: string } {
-  let score = 0;
-  if (password.length >= 8) score += 1;
-  if (password.length >= 12) score += 1;
-  if (password.length >= 16) score += 1;
-  if (/[a-z]/.test(password)) score += 1;
-  if (/[A-Z]/.test(password)) score += 1;
-  if (/[0-9]/.test(password)) score += 1;
-  if (/[^a-zA-Z0-9]/.test(password)) score += 1;
-  if (password.length >= 20) score += 1;
+function translatePattern(pattern: string): string {
+  const map: Record<string, string> = {
+    dictionary: "Mot du dictionnaire",
+    spatial: "Suite clavier (ex: qwerty)",
+    repeat: "Caracteres repetes",
+    sequence: "Suite logique (abc, 123...)",
+    regex: "Pattern detecte",
+    date: "Date detectee",
+    bruteforce: "Force brute",
+  };
+  return map[pattern] || pattern;
+}
 
-  if (score <= 2) return { score, label: "Tres faible", color: "#ef4444" };
-  if (score <= 3) return { score, label: "Faible", color: "#f97316" };
-  if (score <= 5) return { score, label: "Moyen", color: "#f59e0b" };
-  if (score <= 6) return { score, label: "Fort", color: "#00d4ff" };
-  return { score, label: "Tres fort", color: "#39ff14" };
+function translateDictName(name: string): string {
+  const map: Record<string, string> = {
+    passwords: "mots de passe courants",
+    english_wikipedia: "Wikipedia anglais",
+    female_names: "prenoms feminins",
+    male_names: "prenoms masculins",
+    surnames: "noms de famille",
+    us_tv_and_film: "series/films US",
+  };
+  return map[name] || name;
+}
+
+function getStrengthLabel(score: number): { label: string; color: string } {
+  switch (score) {
+    case 0: return { label: "Tres faible", color: "#ef4444" };
+    case 1: return { label: "Faible", color: "#f97316" };
+    case 2: return { label: "Moyen", color: "#f59e0b" };
+    case 3: return { label: "Fort", color: "#00d4ff" };
+    case 4: return { label: "Tres fort", color: "#39ff14" };
+    default: return { label: "Inconnu", color: "#64748b" };
+  }
 }
 
 export function PasswordGenerator() {
-  const [length, setLength] = useState(20);
-  const [options, setOptions] = useState({
-    lowercase: true,
-    uppercase: true,
-    numbers: true,
-    symbols: true,
-  });
-  const [password, setPassword] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [showPassword, setShowPassword] = useState(true);
-
-  // Breach check
   const [checkPassword, setCheckPassword] = useState("");
+  const [showCheck, setShowCheck] = useState(false);
   const [breachResult, setBreachResult] = useState<{ found: boolean; count: number } | null>(null);
-  const [checking, setChecking] = useState(false);
+  const [breachChecking, setBreachChecking] = useState(false);
+
+  const [genLength, setGenLength] = useState(20);
+  const [genOptions, setGenOptions] = useState({
+    lowercase: true, uppercase: true, numbers: true, symbols: true,
+  });
+  const [generatedPw, setGeneratedPw] = useState("");
+  const [showGen, setShowGen] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const analysis = useMemo(() => {
+    if (!checkPassword) return null;
+    return zxcvbn(checkPassword);
+  }, [checkPassword]);
+
+  const strength = analysis ? getStrengthLabel(analysis.score) : null;
+
+  const charBreakdown = useMemo(() => {
+    if (!checkPassword) return null;
+    const upper = (checkPassword.match(/[A-Z]/g) || []).length;
+    const lower = (checkPassword.match(/[a-z]/g) || []).length;
+    const digits = (checkPassword.match(/[0-9]/g) || []).length;
+    const symbols = checkPassword.length - upper - lower - digits;
+    return { length: checkPassword.length, upper, lower, digits, symbols };
+  }, [checkPassword]);
+
+  const recommendations = useMemo(() => {
+    if (!checkPassword || !charBreakdown) return [];
+    const recs: string[] = [];
+    if (charBreakdown.length < 14) recs.push("Allongez votre mot de passe pour atteindre 14-16 caracteres.");
+    if (charBreakdown.upper === 0) recs.push("Ajoutez des lettres majuscules.");
+    if (charBreakdown.lower === 0) recs.push("Ajoutez des lettres minuscules.");
+    if (charBreakdown.digits === 0) recs.push("Ajoutez des chiffres.");
+    if (charBreakdown.symbols === 0) recs.push("Ajoutez des symboles (!@#$%...).");
+    if (charBreakdown.length >= 14 && charBreakdown.upper > 0 && charBreakdown.lower > 0 && charBreakdown.digits > 0 && charBreakdown.symbols > 0) {
+      if (analysis && analysis.score < 4) {
+        recs.push("Evitez les mots du dictionnaire, noms propres ou suites logiques.");
+        recs.push("Utilisez une phrase de passe ou un generateur aleatoire.");
+      }
+    }
+    if (charBreakdown.length < 8) recs.push("Un mot de passe de moins de 8 caracteres est dangereusement court.");
+    return recs;
+  }, [checkPassword, charBreakdown, analysis]);
+
+  useEffect(() => {
+    if (!checkPassword || checkPassword.length < 3) { setBreachResult(null); return; }
+    setBreachChecking(true);
+    const timeout = setTimeout(async () => {
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(checkPassword);
+        const hashBuffer = await crypto.subtle.digest("SHA-1", data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+        const prefix = hashHex.slice(0, 5);
+        const suffix = hashHex.slice(5);
+        const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+        const text = await response.text();
+        const lines = text.split("\n");
+        const match = lines.find((line) => line.startsWith(suffix));
+        if (match) {
+          setBreachResult({ found: true, count: parseInt(match.split(":")[1].trim(), 10) });
+        } else {
+          setBreachResult({ found: false, count: 0 });
+        }
+      } catch { setBreachResult(null); }
+      finally { setBreachChecking(false); }
+    }, 600);
+    return () => clearTimeout(timeout);
+  }, [checkPassword]);
 
   const generatePassword = useCallback(() => {
     let charset = "";
-    if (options.lowercase) charset += CHARSETS.lowercase;
-    if (options.uppercase) charset += CHARSETS.uppercase;
-    if (options.numbers) charset += CHARSETS.numbers;
-    if (options.symbols) charset += CHARSETS.symbols;
-
-    if (!charset) {
-      setPassword("");
-      return;
-    }
-
-    const array = new Uint32Array(length);
+    if (genOptions.lowercase) charset += CHARSETS.lowercase;
+    if (genOptions.uppercase) charset += CHARSETS.uppercase;
+    if (genOptions.numbers) charset += CHARSETS.numbers;
+    if (genOptions.symbols) charset += CHARSETS.symbols;
+    if (!charset) { setGeneratedPw(""); return; }
+    const array = new Uint32Array(genLength);
     crypto.getRandomValues(array);
     let result = "";
-    for (let i = 0; i < length; i++) {
-      result += charset[array[i] % charset.length];
-    }
-    setPassword(result);
+    for (let i = 0; i < genLength; i++) result += charset[array[i] % charset.length];
+    setGeneratedPw(result);
     setCopied(false);
-  }, [length, options]);
+  }, [genLength, genOptions]);
 
-  useEffect(() => {
-    generatePassword();
-  }, [generatePassword]);
+  useEffect(() => { generatePassword(); }, [generatePassword]);
 
-  const copyToClipboard = async () => {
-    await navigator.clipboard.writeText(password);
+  const copyToClipboard = async (text: string) => {
+    await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const checkBreach = async () => {
-    if (!checkPassword) return;
-    setChecking(true);
-    setBreachResult(null);
-
-    try {
-      // Use Web Crypto API to hash the password with SHA-1
-      const encoder = new TextEncoder();
-      const data = encoder.encode(checkPassword);
-      const hashBuffer = await crypto.subtle.digest("SHA-1", data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
-
-      const prefix = hashHex.slice(0, 5);
-      const suffix = hashHex.slice(5);
-
-      const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
-      const text = await response.text();
-
-      const lines = text.split("\n");
-      const match = lines.find((line) => line.startsWith(suffix));
-
-      if (match) {
-        const count = parseInt(match.split(":")[1].trim(), 10);
-        setBreachResult({ found: true, count });
-      } else {
-        setBreachResult({ found: false, count: 0 });
-      }
-    } catch {
-      // Fallback if API is unreachable
-      setBreachResult({ found: false, count: 0 });
-    } finally {
-      setChecking(false);
-    }
-  };
-
-  const strength = getStrength(password);
-  const crackTime = estimateCrackTime(password);
 
   return (
     <div className="min-h-screen py-24">
@@ -139,203 +164,326 @@ export function PasswordGenerator() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6" style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.12)" }}>
             <Key className="w-3.5 h-3.5 text-[#f59e0b]" />
-            <span className="text-[#f59e0b]" style={{ fontSize: "0.75rem", fontFamily: "JetBrains Mono, monospace" }}>Web Crypto API</span>
+            <span className="text-[#f59e0b]" style={{ fontSize: "0.75rem", fontFamily: "JetBrains Mono, monospace" }}>zxcvbn + HaveIBeenPwned + Web Crypto</span>
           </div>
           <h1 style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.8rem, 3vw, 2.2rem)" }} className="text-[#e2e8f0] mb-4">
-            Generateur de{" "}
-            <span style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Mots de Passe</span>
+            Mots de{" "}
+            <span style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Passe</span>
           </h1>
           <p className="text-[#94a3b8] max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
-            Generez des mots de passe cryptographiquement securises avec l'API Web Crypto.
-            Verifiez aussi si vos mots de passe ont fuite via HaveIBeenPwned.
+            Analysez la robustesse de vos mots de passe ou generez-en de nouveaux, cryptographiquement securises.
           </p>
         </motion.div>
 
-        {/* Generated Password */}
+        {/* ═══ SECTION 1: ANALYSEUR ═══ */}
         <div className="bg-[#111827] border border-[#f59e0b]/20 rounded-xl p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex-1 bg-[#0a0a0f] border border-[#f59e0b]/20 rounded-lg px-4 py-3 font-mono overflow-x-auto">
-              <span className="text-[#e2e8f0] whitespace-nowrap" style={{ fontSize: "1.1rem", letterSpacing: "1px" }}>
-                {showPassword ? password : "•".repeat(password.length)}
-              </span>
-            </div>
-            <button
-              onClick={() => setShowPassword(!showPassword)}
-              className="p-2.5 bg-[#1e293b] rounded-lg text-[#94a3b8] hover:text-[#e2e8f0] transition-colors"
-            >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="w-5 h-5 text-[#f59e0b]" />
+            <h2 className="text-[#e2e8f0]" style={{ fontFamily: "Orbitron, sans-serif", fontSize: "0.95rem" }}>Analyser un mot de passe</h2>
+          </div>
+
+          <div className="relative mb-4">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
+            <input
+              type={showCheck ? "text" : "password"}
+              value={checkPassword}
+              onChange={(e) => setCheckPassword(e.target.value)}
+              placeholder="Entrez un mot de passe"
+              className="w-full pl-10 pr-12 py-3.5 bg-[#0a0a0f] border border-[#f59e0b]/20 rounded-lg text-[#e2e8f0] placeholder-[#64748b] focus:outline-none focus:border-[#f59e0b]/60 transition-colors"
+              style={{ fontSize: "1rem", fontFamily: "JetBrains Mono, monospace" }}
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <button onClick={() => setShowCheck(!showCheck)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#64748b] hover:text-[#e2e8f0] transition-colors">
+              {showCheck ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
-            <button
-              onClick={copyToClipboard}
-              className="p-2.5 bg-[#1e293b] rounded-lg text-[#94a3b8] hover:text-[#39ff14] transition-colors"
-            >
+          </div>
+
+          {checkPassword && strength && analysis && (
+            <AnimatePresence>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
+                {/* Strength bar */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>Force</span>
+                    <span style={{ fontSize: "0.85rem", color: strength.color, fontFamily: "Orbitron, sans-serif" }}>{strength.label}</span>
+                  </div>
+                  <div className="w-full h-2.5 bg-[#1e293b] rounded-full overflow-hidden flex gap-1">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex-1 rounded-full transition-all duration-500" style={{ backgroundColor: i <= analysis.score ? strength.color : "#1e293b" }} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Breach check */}
+                <div
+                  className="flex items-start gap-3 p-3 rounded-lg"
+                  style={{
+                    background: breachChecking ? "rgba(0,212,255,0.03)" : breachResult?.found ? "rgba(239,68,68,0.05)" : "rgba(57,255,20,0.05)",
+                    border: `1px solid ${breachChecking ? "rgba(0,212,255,0.1)" : breachResult?.found ? "rgba(239,68,68,0.15)" : "rgba(57,255,20,0.15)"}`,
+                  }}
+                >
+                  {breachChecking ? (
+                    <Loader2 className="w-4 h-4 text-[#00d4ff] animate-spin flex-shrink-0 mt-0.5" />
+                  ) : breachResult?.found ? (
+                    <XCircle className="w-4 h-4 text-[#ef4444] flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <CheckCircle className="w-4 h-4 text-[#39ff14] flex-shrink-0 mt-0.5" />
+                  )}
+                  <div>
+                    <p style={{ fontSize: "0.8rem", color: breachChecking ? "#00d4ff" : breachResult?.found ? "#ef4444" : "#39ff14" }}>
+                      Fuite connue (haveibeenpwned.com)
+                    </p>
+                    <p className="text-[#94a3b8]" style={{ fontSize: "0.75rem" }}>
+                      {breachChecking
+                        ? "Verification en cours..."
+                        : breachResult?.found
+                          ? `Ce mot de passe a ete trouve ${breachResult.count.toLocaleString("fr-FR")} fois dans des fuites de donnees. Changez-le immediatement.`
+                          : "Aucune occurrence trouvee (cela ne garantit pas sa securite, mais il n'est pas liste)."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Recommendations */}
+                {recommendations.length > 0 && (
+                  <div className="p-3 rounded-lg" style={{ background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.12)" }}>
+                    <p className="text-[#f59e0b] mb-2" style={{ fontSize: "0.8rem", fontFamily: "Orbitron, sans-serif" }}>Recommandations</p>
+                    <ul className="space-y-1.5">
+                      {recommendations.map((rec, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <ArrowRight className="w-3 h-3 text-[#f59e0b] flex-shrink-0 mt-1" />
+                          <span className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>{rec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Character breakdown */}
+                {charBreakdown && (
+                  <div className="grid grid-cols-5 gap-2">
+                    {[
+                      { label: "Longueur", value: charBreakdown.length, color: "#00d4ff" },
+                      { label: "Majuscule(s)", value: charBreakdown.upper, color: charBreakdown.upper > 0 ? "#39ff14" : "#ef4444" },
+                      { label: "Minuscule(s)", value: charBreakdown.lower, color: charBreakdown.lower > 0 ? "#39ff14" : "#ef4444" },
+                      { label: "Chiffre(s)", value: charBreakdown.digits, color: charBreakdown.digits > 0 ? "#39ff14" : "#ef4444" },
+                      { label: "Symbole(s)", value: charBreakdown.symbols, color: charBreakdown.symbols > 0 ? "#39ff14" : "#ef4444" },
+                    ].map((item) => (
+                      <div key={item.label} className="bg-[#0a0a0f] rounded-lg p-3 text-center">
+                        <div style={{ fontFamily: "Orbitron, sans-serif", fontSize: "1.3rem", color: item.color }}>{item.value}</div>
+                        <p className="text-[#64748b] mt-1" style={{ fontSize: "0.65rem" }}>{item.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* ═══ CRACK TIME — 4 real zxcvbn scenarios ═══ */}
+                <div className="bg-[#0a0a0f] rounded-lg overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div className="flex items-center gap-2 p-3">
+                    <Clock className="w-4 h-4 flex-shrink-0" style={{ color: strength.color }} />
+                    <p className="text-[#e2e8f0]" style={{ fontSize: "0.85rem" }}>
+                      Ce mot de passe pourrait etre craque en{" "}
+                      <span style={{ color: strength.color, fontFamily: "JetBrains Mono, monospace" }}>
+                        ≈ {translateCrackTime(analysis.crack_times_display.offline_slow_hashing_1e4_per_second)}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="border-t border-[#1e293b] px-3 py-2.5 space-y-2">
+                    {([
+                      {
+                        icon: Wifi,
+                        label: "Attaque en ligne (throttled)",
+                        desc: "100 tentatives/heure — login web avec rate limiting",
+                        display: analysis.crack_times_display.online_throttling_100_per_hour,
+                        seconds: analysis.crack_times_seconds.online_throttling_100_per_hour,
+                      },
+                      {
+                        icon: WifiOff,
+                        label: "Attaque en ligne (no throttle)",
+                        desc: "10 tentatives/seconde — API sans rate limiting",
+                        display: analysis.crack_times_display.online_no_throttling_10_per_second,
+                        seconds: analysis.crack_times_seconds.online_no_throttling_10_per_second,
+                      },
+                      {
+                        icon: Server,
+                        label: "Attaque offline (hash lent)",
+                        desc: "10k tentatives/sec — bcrypt, scrypt, Argon2",
+                        display: analysis.crack_times_display.offline_slow_hashing_1e4_per_second,
+                        seconds: analysis.crack_times_seconds.offline_slow_hashing_1e4_per_second,
+                      },
+                      {
+                        icon: Zap,
+                        label: "Attaque offline (hash rapide)",
+                        desc: "10B tentatives/sec — MD5, SHA1 sur GPU",
+                        display: analysis.crack_times_display.offline_fast_hashing_1e10,
+                        seconds: analysis.crack_times_seconds.offline_fast_hashing_1e10,
+                      },
+                    ] as const).map((sc) => {
+                      const c = sc.seconds < 1 ? "#ef4444" : sc.seconds < 86400 ? "#f59e0b" : sc.seconds < 86400 * 365 * 100 ? "#00d4ff" : "#39ff14";
+                      return (
+                        <div key={sc.label} className="flex items-center gap-3 py-1.5">
+                          <sc.icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: c }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[#94a3b8] truncate" style={{ fontSize: "0.72rem" }}>{sc.label}</p>
+                            <p className="text-[#4a5568] truncate" style={{ fontSize: "0.62rem" }}>{sc.desc}</p>
+                          </div>
+                          <span className="flex-shrink-0" style={{ fontSize: "0.75rem", color: c, fontFamily: "JetBrains Mono, monospace" }}>
+                            ≈ {translateCrackTime(sc.display)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="border-t border-[#1e293b] px-3 py-2 flex items-center gap-2">
+                    <Hash className="w-3 h-3 text-[#4a5568]" />
+                    <span className="text-[#4a5568]" style={{ fontSize: "0.7rem", fontFamily: "JetBrains Mono, monospace" }}>
+                      {Number(analysis.guesses).toLocaleString("fr-FR")} combinaisons a tester (10^{analysis.guesses_log10.toFixed(1)})
+                    </span>
+                  </div>
+                </div>
+
+                {/* Pattern analysis from zxcvbn */}
+                {analysis.sequence && analysis.sequence.length > 0 && (
+                  <div className="bg-[#0a0a0f] rounded-lg p-3" style={{ border: "1px solid rgba(255,255,255,0.04)" }}>
+                    <p className="text-[#94a3b8] mb-2" style={{ fontSize: "0.75rem", fontFamily: "Orbitron, sans-serif" }}>Patterns detectes par zxcvbn</p>
+                    <div className="space-y-1.5">
+                      {analysis.sequence.map((match: any, i: number) => (
+                        <div key={i} className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[#f59e0b] font-mono px-1.5 py-0.5 bg-[#f59e0b]/10 rounded" style={{ fontSize: "0.72rem" }}>
+                            &quot;{match.token}&quot;
+                          </span>
+                          <span className="text-[#64748b]" style={{ fontSize: "0.7rem" }}>&rarr;</span>
+                          <span className="text-[#94a3b8]" style={{ fontSize: "0.72rem" }}>
+                            {translatePattern(match.pattern)}
+                            {match.dictionary_name ? ` (${translateDictName(match.dictionary_name)})` : ""}
+                            {match.pattern === "date" && match.year ? ` — annee ${match.year}` : ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* zxcvbn feedback */}
+                {analysis.feedback && (analysis.feedback.warning || (analysis.feedback.suggestions && analysis.feedback.suggestions.length > 0)) && (
+                  <div className="p-3 rounded-lg" style={{ background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.12)" }}>
+                    {analysis.feedback.warning && (
+                      <div className="flex items-start gap-2 mb-2">
+                        <AlertTriangle className="w-3.5 h-3.5 text-[#f59e0b] flex-shrink-0 mt-0.5" />
+                        <p className="text-[#f59e0b]" style={{ fontSize: "0.8rem" }}>{analysis.feedback.warning}</p>
+                      </div>
+                    )}
+                    {analysis.feedback.suggestions?.map((s: string, i: number) => (
+                      <div key={i} className="flex items-start gap-2 mb-1">
+                        <ArrowRight className="w-3 h-3 text-[#8b5cf6] flex-shrink-0 mt-0.5" />
+                        <p className="text-[#94a3b8]" style={{ fontSize: "0.75rem" }}>{s}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Disclaimer */}
+                <div className="flex items-start gap-2">
+                  <Info className="w-3 h-3 text-[#4a5568] flex-shrink-0 mt-0.5" />
+                  <p className="text-[#4a5568]" style={{ fontSize: "0.65rem", lineHeight: 1.5 }}>
+                    Estimations basees sur l'algorithme open source <strong>zxcvbn</strong> (cree par Dropbox),
+                    en supposant une attaque par force brute sans limitation de tentatives ni protections
+                    supplementaires (MFA, verrouillage de compte, etc.). Ces valeurs sont indicatives et ne
+                    remplacent pas les politiques de securite de votre organisation.
+                  </p>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </div>
+
+        {/* ═══ SECTION 2: GENERATEUR ═══ */}
+        <div className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl p-6 mb-6">
+          <div className="flex items-center gap-2 mb-5">
+            <RefreshCw className="w-5 h-5 text-[#00d4ff]" />
+            <h2 className="text-[#e2e8f0]" style={{ fontFamily: "Orbitron, sans-serif", fontSize: "0.95rem" }}>Generer un mot de passe</h2>
+          </div>
+
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1">
+              <input
+                type={showGen ? "text" : "password"}
+                value={generatedPw}
+                onChange={(e) => { setGeneratedPw(e.target.value); setCopied(false); }}
+                className="w-full bg-[#0a0a0f] border border-[#00d4ff]/20 rounded-lg px-4 py-3 font-mono text-[#e2e8f0] focus:outline-none focus:border-[#00d4ff]/60 transition-colors"
+                style={{ fontSize: "1rem", letterSpacing: "0.5px" }}
+                spellCheck={false}
+                autoComplete="off"
+              />
+            </div>
+            <button onClick={() => setShowGen(!showGen)} className="p-2.5 bg-[#1e293b] rounded-lg text-[#94a3b8] hover:text-[#e2e8f0] transition-colors">
+              {showGen ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+            <button onClick={() => copyToClipboard(generatedPw)} className="p-2.5 bg-[#1e293b] rounded-lg text-[#94a3b8] hover:text-[#39ff14] transition-colors">
               {copied ? <Check className="w-5 h-5 text-[#39ff14]" /> : <Copy className="w-5 h-5" />}
             </button>
-            <button
-              onClick={generatePassword}
-              className="p-2.5 bg-[#f59e0b] rounded-lg text-[#0a0a0f] hover:bg-[#d97706] transition-colors"
-            >
+            <button onClick={generatePassword} className="p-2.5 bg-[#00d4ff] rounded-lg text-[#0a0a0f] hover:bg-[#00b8d9] transition-colors">
               <RefreshCw className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Strength bar */}
-          <div className="mb-3">
-            <div className="flex justify-between mb-1.5">
-              <span className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>Force</span>
-              <span style={{ fontSize: "0.8rem", color: strength.color }}>{strength.label}</span>
-            </div>
-            <div className="w-full h-2 bg-[#1e293b] rounded-full overflow-hidden flex gap-1">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex-1 rounded-full transition-all"
-                  style={{
-                    backgroundColor: i < strength.score ? strength.color : "#1e293b",
-                  }}
-                />
-              ))}
-            </div>
-          </div>
+          {generatedPw && (() => {
+            const ga = zxcvbn(generatedPw);
+            const gs = getStrengthLabel(ga.score);
+            return (
+              <div className="flex items-center gap-3 mb-5 px-1">
+                <div className="flex-1 h-1.5 bg-[#1e293b] rounded-full overflow-hidden flex gap-0.5">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex-1 rounded-full transition-all" style={{ backgroundColor: i <= ga.score ? gs.color : "#1e293b" }} />
+                  ))}
+                </div>
+                <span style={{ fontSize: "0.75rem", color: gs.color, fontFamily: "Orbitron, sans-serif" }}>{gs.label}</span>
+              </div>
+            );
+          })()}
 
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4" style={{ color: crackTime.color }} />
-            <span className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>
-              Temps de crack estime : <span style={{ color: crackTime.color }}>{crackTime.label}</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Options */}
-        <div className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl p-6 mb-6">
-          <h3 className="text-[#e2e8f0] mb-4">Options</h3>
-
-          {/* Length slider */}
-          <div className="mb-6">
+          <div className="mb-5">
             <div className="flex justify-between mb-2">
               <span className="text-[#94a3b8]" style={{ fontSize: "0.85rem" }}>Longueur</span>
-              <span className="text-[#f59e0b]" style={{ fontFamily: "Orbitron, sans-serif" }}>{length}</span>
+              <span className="text-[#00d4ff]" style={{ fontFamily: "Orbitron, sans-serif" }}>{genLength}</span>
             </div>
-            <input
-              type="range"
-              min={4}
-              max={64}
-              value={length}
-              onChange={(e) => setLength(Number(e.target.value))}
-              className="w-full accent-[#f59e0b] h-2 bg-[#1e293b] rounded-full appearance-none cursor-pointer"
-            />
+            <input type="range" min={4} max={64} value={genLength} onChange={(e) => setGenLength(Number(e.target.value))} className="w-full accent-[#00d4ff] h-2 bg-[#1e293b] rounded-full appearance-none cursor-pointer" />
             <div className="flex justify-between text-[#64748b] mt-1" style={{ fontSize: "0.7rem" }}>
-              <span>4</span>
-              <span>16</span>
-              <span>32</span>
-              <span>48</span>
-              <span>64</span>
+              <span>4</span><span>16</span><span>32</span><span>48</span><span>64</span>
             </div>
           </div>
 
-          {/* Character options */}
           <div className="grid grid-cols-2 gap-3">
-            {[
-              { key: "lowercase" as const, label: "Minuscules (a-z)", example: "abc" },
-              { key: "uppercase" as const, label: "Majuscules (A-Z)", example: "ABC" },
-              { key: "numbers" as const, label: "Chiffres (0-9)", example: "123" },
-              { key: "symbols" as const, label: "Symboles (!@#)", example: "!@#" },
-            ].map((opt) => (
+            {([
+              { key: "lowercase" as const, label: "Minuscules (a-z)" },
+              { key: "uppercase" as const, label: "Majuscules (A-Z)" },
+              { key: "numbers" as const, label: "Chiffres (0-9)" },
+              { key: "symbols" as const, label: "Symboles (!@#)" },
+            ]).map((opt) => (
               <button
                 key={opt.key}
-                onClick={() => setOptions((prev) => ({ ...prev, [opt.key]: !prev[opt.key] }))}
-                className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                  options[opt.key]
-                    ? "bg-[#f59e0b]/10 border-[#f59e0b]/40 text-[#e2e8f0]"
-                    : "bg-[#0a0a0f] border-[#1e293b] text-[#64748b]"
-                }`}
+                onClick={() => setGenOptions((prev) => ({ ...prev, [opt.key]: !prev[opt.key] }))}
+                className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${genOptions[opt.key] ? "bg-[#00d4ff]/10 border-[#00d4ff]/40 text-[#e2e8f0]" : "bg-[#0a0a0f] border-[#1e293b] text-[#64748b]"}`}
               >
-                <div
-                  className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
-                    options[opt.key] ? "bg-[#f59e0b]" : "bg-[#1e293b]"
-                  }`}
-                >
-                  {options[opt.key] && <Check className="w-3 h-3 text-[#0a0a0f]" />}
+                <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${genOptions[opt.key] ? "bg-[#00d4ff]" : "bg-[#1e293b]"}`}>
+                  {genOptions[opt.key] && <Check className="w-3 h-3 text-[#0a0a0f]" />}
                 </div>
-                <div className="text-left">
-                  <p style={{ fontSize: "0.85rem" }}>{opt.label}</p>
-                </div>
+                <p style={{ fontSize: "0.85rem" }}>{opt.label}</p>
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Breach Check */}
-        <div className="bg-[#111827] border border-[#ef4444]/20 rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="w-5 h-5 text-[#ef4444]" />
-            <h3 className="text-[#e2e8f0]">Verifier une fuite de mot de passe</h3>
-          </div>
-          <p className="text-[#94a3b8] mb-4" style={{ fontSize: "0.85rem" }}>
-            Verifiez si un mot de passe a ete compromis dans une fuite de donnees via l'API{" "}
-            <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer" className="text-[#00d4ff] hover:underline">
-              HaveIBeenPwned
-            </a>
-            . Votre mot de passe n'est jamais envoye en clair — seuls les 5 premiers caracteres du hash SHA-1 sont transmis (k-anonymity).
-          </p>
-
-          <div className="flex gap-3 mb-4">
-            <input
-              type="password"
-              value={checkPassword}
-              onChange={(e) => { setCheckPassword(e.target.value); setBreachResult(null); }}
-              placeholder="Entrez un mot de passe a verifier..."
-              className="flex-1 px-4 py-3 bg-[#0a0a0f] border border-[#ef4444]/20 rounded-lg text-[#e2e8f0] placeholder-[#64748b] focus:outline-none focus:border-[#ef4444]/50"
-            />
+          {generatedPw && (
             <button
-              onClick={checkBreach}
-              disabled={checking || !checkPassword}
-              className="px-5 py-3 bg-[#ef4444] text-white rounded-lg hover:bg-[#dc2626] transition-all disabled:opacity-50 flex items-center gap-2"
-              style={{ fontSize: "0.85rem" }}
+              onClick={() => { setCheckPassword(generatedPw); setShowCheck(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              className="mt-4 w-full py-2.5 rounded-lg text-[#00d4ff] hover:bg-[#00d4ff]/10 transition-colors flex items-center justify-center gap-2"
+              style={{ fontSize: "0.8rem", border: "1px solid rgba(0,212,255,0.15)" }}
             >
-              {checking ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Search className="w-4 h-4" />
-              )}
-              Verifier
+              <Search className="w-3.5 h-3.5" />
+              Analyser ce mot de passe en detail
             </button>
-          </div>
-
-          {breachResult && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`p-4 rounded-lg border ${
-                breachResult.found
-                  ? "bg-[#ef4444]/10 border-[#ef4444]/30"
-                  : "bg-[#39ff14]/10 border-[#39ff14]/30"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                {breachResult.found ? (
-                  <>
-                    <XCircle className="w-5 h-5 text-[#ef4444]" />
-                    <div>
-                      <p className="text-[#ef4444]">Mot de passe compromis !</p>
-                      <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>
-                        Ce mot de passe a ete trouve {breachResult.count.toLocaleString()} fois dans des fuites de donnees. Changez-le immediatement.
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-5 h-5 text-[#39ff14]" />
-                    <div>
-                      <p className="text-[#39ff14]">Aucune fuite detectee</p>
-                      <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>
-                        Ce mot de passe n'a pas ete trouve dans les bases de donnees de fuites connues.
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </motion.div>
           )}
         </div>
       </div>

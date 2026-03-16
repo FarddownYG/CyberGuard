@@ -22,6 +22,9 @@ async function computeHash(buffer: ArrayBuffer, algorithm: string): Promise<stri
 }
 
 function md5(buffer: ArrayBuffer): string {
+  // NOTE: This is NOT real MD5. Web Crypto API does not support MD5.
+  // This is a fast FNV-based fingerprint used as a local identifier only.
+  // The real MD5 hash is provided by VirusTotal when available.
   const bytes = new Uint8Array(buffer);
   let hash = 0x811c9dc5;
   for (let i = 0; i < bytes.length; i++) {
@@ -329,9 +332,9 @@ export function FileAnalyzer() {
 
             {/* Hashes */}
             {[
-              { label: "MD5", value: result.md5, note: "FNV-based (navigateur)" },
+              { label: "Empreinte locale", value: result.md5, note: "FNV-based — ce n'est PAS du vrai MD5" },
               { label: "SHA-1", value: result.sha1, note: "Web Crypto API" },
-              { label: "SHA-256", value: result.sha256, note: "Web Crypto API" },
+              { label: "SHA-256", value: result.sha256, note: "Web Crypto API — utilise pour le lookup VT" },
             ].map((h) => (
               <div key={h.label} className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-2">
