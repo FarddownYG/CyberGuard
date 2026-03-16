@@ -1,0 +1,103 @@
+
+CYBERGUARD
+Accueil
+Pentesting
+VirusTotal
+Outils
+Blog
+Statut
+A propos
+Powered by Shannon AI — Keygraph
+Pentesting Hub
+Pentests automatises propulses par Shannon — l'IA pentester autonome de Keygraph. Analyse white-box + exploitation dynamique reelle. Zero faux positifs : pas d'exploit = pas de rapport.
+
+Shannon AI Pentest
+Pentest autonome — OWASP Top 10 — PoC fonctionnels
+
+Shannon via GitHub Actions
+Connecte
+FarddownYG/shannon
+Scan Rapide
+Recon + Top vulns — ~10 min
+Scan Complet
+5 pipelines OWASP — ~30-90 min
+https://cyber-guard-dusky.vercel.app/
+Lancer Shannon
+shannon@cyberguard — failed
+$
+[13:58:01] Initialisation du pentest Shannon...
+$
+[13:58:01] Cible: https://cyber-guard-dusky.vercel.app/
+$
+[13:58:01] Mode: Complet (5 categories OWASP)
+$
+[13:58:01] [INFO] Declenchement du workflow GitHub Actions...
+✓
+[13:58:02] [OK] Workflow declenche — en attente du runner...
+✓
+[13:58:07] [OK] Run #23144834935 demarre
+!
+[13:59:13] [ERR] Scan echoue (conclusion: failure)
+$
+[13:59:13] [INFO] Consultez les logs: https://github.com/FarddownYG/shannon/actions/runs/23144834935
+Scan echoue
+Le scan a termine avec une erreur. Voir le diagnostic ci-dessous.
+
+Logs GitHub Actions
+Reessayer
+Diagnostic automatique
+Cause identifiee
+
+Le scan Shannon a echoue
+
+Details
+
+L'etape "Run Shannon Pentest" a termine avec une erreur (exit code 1). Cela signifie generalement que Shannon n'a pas pu se lancer correctement ou que l'API key est manquante.
+
+Actions correctives
+
+1.
+Verifiez que le secret ANTHROPIC_API_KEY est bien configure dans Settings → Secrets → Actions du repo GitHub.
+
+2.
+Verifiez que la cle API Anthropic est valide et non expiree.
+
+3.
+Assurez-vous que le fichier .github/workflows/cyberguard-scan.yml utilise correctement ${{ secrets.ANTHROPIC_API_KEY }}.
+
+4.
+Verifiez que Shannon est correctement installe dans le workflow (pip install shannon-ai ou equivalent).
+
+5.
+Consultez les logs detailles du step echoue sur GitHub Actions.
+
+Verifier les Secrets
+Voir le workflow YAML
+CYBERGUARD
+Plateforme open-source de cybersecurite. Testez, analysez et renforcez la securite de vos sites web.
+
+OUTILS
+Pentesting
+Analyse VirusTotal
+SSL Checker
+Mots de passe
+Analyseur fichiers
+Email Checker
+DNS Security
+RESSOURCES
+Blog Securite
+Page de Statut
+A propos
+SYSTEME
+Voir le statut en direct
+
+Verifications temps reel
+
+$ cyberguard --version
+v3.0.0 — build 2026.03.14
+
+© 2026 CyberGuard. Fait avecpour la cybersecurite.
+
+Mentions legales
+|
+Confidentialite
