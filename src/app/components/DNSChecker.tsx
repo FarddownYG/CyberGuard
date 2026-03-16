@@ -14,6 +14,7 @@ interface DNSResult {
   domain: string;
   isSubdomain: boolean;
   parentDomain: string | null;
+  platform: string | null;
   checks: DNSCheck[];
   overallScore: number;
   recommendations: string[];
@@ -53,6 +54,31 @@ function getParentDomain(domain: string): string | null {
   const parts = domain.split(".");
   if (parts.length <= 2) return null;
   return parts.slice(-2).join(".");
+}
+
+// Known managed hosting platforms where users don't control DNS
+const MANAGED_PLATFORMS: Record<string, string> = {
+  "vercel.app": "Vercel",
+  "netlify.app": "Netlify",
+  "github.io": "GitHub Pages",
+  "pages.dev": "Cloudflare Pages",
+  "herokuapp.com": "Heroku",
+  "fly.dev": "Fly.io",
+  "railway.app": "Railway",
+  "render.com": "Render",
+  "surge.sh": "Surge",
+  "web.app": "Firebase Hosting",
+  "firebaseapp.com": "Firebase Hosting",
+  "azurestaticapps.net": "Azure Static Web Apps",
+  "amplifyapp.com": "AWS Amplify",
+};
+
+function getManagedPlatform(domain: string): string | null {
+  const lower = domain.toLowerCase();
+  for (const [suffix, name] of Object.entries(MANAGED_PLATFORMS)) {
+    if (lower.endsWith(`.${suffix}`)) return name;
+  }
+  return null;
 }
 
 // ─── DNS Checks ─────────────────────────────────────────────────────────
@@ -374,6 +400,7 @@ async function performDNSCheck(domain: string, onProgress?: (step: string) => vo
   const clean = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "").toLowerCase();
   const isSub = isSubdomain(clean);
   const parent = getParentDomain(clean);
+  const platform = getManagedPlatform(clean);
 
   onProgress?.("Resolution A/AAAA et NS...");
   const [aResult, aaaaResult, nsResult] = await Promise.all([
@@ -411,6 +438,24 @@ async function performDNSCheck(domain: string, onProgress?: (step: string) => vo
     httpsResult.hsts,
   ];
 
+  // If on a managed platform subdomain, downgrade unfixable DNS checks to "info"
+  // because the user does NOT control the DNS zone
+  if (platform) {
+    const unfixableOnPlatform = ["SPF", "DMARC", "DNSSEC", "CAA", "MX"];
+    checks = checks.map((c) => {
+      const isUnfixable = unfixableOnPlatform.some((name) => c.name.includes(name));
+      if (isUnfixable && (c.status === "fail" || c.status === "warn")) {
+        return {
+          ...c,
+          status: "info" as const,
+          detail: c.detail + ` (Sous-domaine ${platform} : vous n'avez pas acces a la zone DNS, cet element n'est pas modifiable de votre cote.)`,
+          fix: undefined,
+        };
+      }
+      return c;
+    });
+  }
+
   // Sort: fail first, then warn, then pass, then info
   const statusOrder = { fail: 0, warn: 1, pass: 2, info: 3 };
   checks.sort((a, b) => (statusOrder[a.status] ?? 4) - (statusOrder[b.status] ?? 4));
@@ -422,15 +467,24 @@ async function performDNSCheck(domain: string, onProgress?: (step: string) => vo
 
   // Generate recommendations
   const recommendations: string[] = [];
-  if (isSub) {
+  const fails = checks.filter((c) => c.status === "fail");
+  const warns = checks.filter((c) => c.status === "warn");
+  if (platform) {
+    recommendations.push(
+      `Ce site est heberge sur ${platform} (sous-domaine ${parent || ""}). Vous ne controlez PAS la zone DNS — les elements SPF, DMARC, DNSSEC, CAA et MX ne sont pas modifiables de votre cote et ont ete reclasses en "info". En revanche, vous pouvez securiser votre site via les headers HTTP (HSTS, CSP, X-Frame-Options) dans votre fichier de configuration ${platform === "Vercel" ? "vercel.json" : platform === "Netlify" ? "netlify.toml" : "de deploiement"}.`
+    );
+  } else if (isSub) {
     recommendations.push(
       `"${clean}" est un sous-domaine. Les enregistrements SPF, DKIM, DMARC et MX sont generalement configures sur le domaine parent (${parent || "domaine.com"}), pas sur les sous-domaines. Ceci explique leur absence.`
     );
   }
-  const fails = checks.filter((c) => c.status === "fail");
-  const warns = checks.filter((c) => c.status === "warn");
   if (fails.length === 0 && warns.length === 0) {
     recommendations.push("La configuration DNS de ce domaine est bien securisee. Aucun probleme critique detecte.");
+  }
+  if (platform) {
+    recommendations.push(
+      `Pour ameliorer la securite de votre site ${platform}, concentrez-vous sur : les headers de securite HTTP (HSTS, CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy), la configuration HTTPS (automatique sur ${platform}), et la securite applicative (XSS, CSRF, etc.).`
+    );
   }
   if (fails.some((c) => c.name.includes("SPF"))) {
     recommendations.push("Priorite haute : ajoutez un enregistrement SPF pour empecher l'usurpation d'email.");
@@ -452,6 +506,7 @@ async function performDNSCheck(domain: string, onProgress?: (step: string) => vo
     domain: clean,
     isSubdomain: isSub,
     parentDomain: parent,
+    platform: platform,
     checks,
     overallScore,
     recommendations,
