@@ -1,0 +1,105 @@
+
+Skip to content
+FarddownYG
+shannon
+Repository navigation
+Code
+Pull requests
+Actions
+Projects
+Wiki
+Security
+Insights
+Settings
+CyberGuard Shannon Scan
+CyberGuard Shannon Scan #10
+All jobs
+Run details
+Annotations
+1 error and 2 warnings
+shannon-pentest
+failed 26 minutes ago in 15s
+Search logs
+1s
+3s
+1s
+7s
+0s
+0s
+Run echo "=== Environment ==="
+=== Environment ===
+Node: v20.20.0
+Python: Python 3.12.3
+API key set: true
+=== shannon script (first 5 lines) ===
+#!/bin/bash
+# Shannon CLI - AI Penetration Testing Framework
+
+set -e
+
+=== Repo root ===
+total 332
+drwxr-xr-x  15 runner runner  4096 Mar 16 17:51 .
+drwxr-xr-x   3 runner runner  4096 Mar 16 17:51 ..
+drwxr-xr-x   3 runner runner  4096 Mar 16 17:51 .claude
+-rw-r--r--   1 runner runner   660 Mar 16 17:51 .dockerignore
+-rw-r--r--   1 runner runner  3407 Mar 16 17:51 .env.example
+drwxr-xr-x   7 runner runner  4096 Mar 16 17:51 .git
+drwxr-xr-x   4 runner runner  4096 Mar 16 17:51 .github
+-rw-r--r--   1 runner runner    57 Mar 16 17:51 .gitignore
+-rw-r--r--   1 runner runner  9847 Mar 16 17:51 CLAUDE.md
+-rw-r--r--   1 runner runner  8755 Mar 16 17:51 COVERAGE.md
+-rw-r--r--   1 runner runner  4427 Mar 16 17:51 Dockerfile
+-rw-r--r--   1 runner runner 34523 Mar 16 17:51 LICENSE
+-rw-r--r--   1 runner runner 35908 Mar 16 17:51 README.md
+-rw-r--r--   1 runner runner 26798 Mar 16 17:51 SHANNON-PRO.md
+drwxr-xr-x   2 runner runner  4096 Mar 16 17:51 assets
+drwxr-xr-x   2 runner runner  4096 Mar 16 17:51 audit-logs
+drwxr-xr-x   2 runner runner  4096 Mar 16 17:51 configs
+-rw-r--r--   1 runner runner   212 Mar 16 17:51 docker-compose.docker.yml
+-rw-r--r--   1 runner runner  3261 Mar 16 17:51 docker-compose.yml
+drwxr-xr-x   3 runner runner  4096 Mar 16 17:51 mcp-server
+drwxr-xr-x 122 runner runner  4096 Mar 16 17:51 node_modules
+-rw-r--r--   1 runner runner 97085 Mar 16 17:51 package-lock.json
+-rw-r--r--   1 runner runner   963 Mar 16 17:51 package.json
+drwxr-xr-x   4 runner runner  4096 Mar 16 17:51 prompts
+drwxr-xr-x   2 runner runner  4096 Mar 16 17:51 repos
+drwxr-xr-x   2 runner runner  4096 Mar 16 17:51 sample-reports
+-rwxr-xr-x   1 runner runner 13719 Mar 16 17:51 shannon
+drwxr-xr-x   8 runner runner  4096 Mar 16 17:51 src
+-rw-r--r--   1 runner runner  1268 Mar 16 17:51 tsconfig.json
+drwxr-xr-x 106 runner runner  4096 Mar 16 17:51 xben-benchmark-results
+0s
+Run echo "::group::Starting Shannon scan"
+Starting Shannon scan
+  Target: https://cyber-guard-dusky.vercel.app/
+  Type: full
+  ERROR: URL and REPO are required
+  Usage: ./shannon start URL=<url> REPO=<name>
+  Error: Process completed with exit code 1.
+0s
+Run echo "=== audit-logs/ ==="
+=== audit-logs/ ===
+audit-logs/.gitkeep
+0s
+Run actions/upload-artifact@v4
+Warning: No files were found with the provided path: audit-logs/. No artifacts will be uploaded.
+0s
+Run SCAN_DIR=$(ls -td audit-logs/*/ 2>/dev/null | head -1)
+0s
+0s
+Post job cleanup.
+/usr/bin/git version
+git version 2.53.0
+Temporarily overriding HOME='/home/runner/work/_temp/3609573b-969d-4b17-bc8a-049631c0c9b8' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+/usr/bin/git config --global --add safe.directory /home/runner/work/shannon/shannon
+/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+http.https://github.com/.extraheader
+/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+0s
