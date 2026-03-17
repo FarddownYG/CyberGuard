@@ -141,6 +141,13 @@ export function Footer() {
           </div>
         </div>
 
+        {/* Disclaimer */}
+        <div className="pt-6 pb-2">
+          <p className="text-[#3a4255] text-center max-w-3xl mx-auto" style={{ fontSize: "0.68rem", lineHeight: 1.6 }}>
+            <strong className="text-[#4a5568]">Disclaimer :</strong> CyberGuard est une plateforme mise a disposition a titre informatif et educatif uniquement, sans aucune obligation d'utilisation. L'equipe CyberGuard decline toute responsabilite quant aux consequences, dommages ou repercussions pouvant resulter de l'utilisation des outils proposes sur ce site. L'utilisateur est seul responsable de l'usage qu'il fait de ces outils et s'engage a les utiliser dans le respect de la legislation en vigueur.
+          </p>
+        </div>
+
         {/* Bottom bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
           <p className="text-[#4a5568] flex items-center gap-1.5" style={{ fontSize: "0.75rem" }}>

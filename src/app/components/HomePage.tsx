@@ -1,11 +1,25 @@
+import { useRef, useState, useEffect, useMemo } from "react";
 import { Link } from "react-router";
 import {
   Shield, Search, Lock, BookOpen, ChevronRight, Zap, Eye, ShieldCheck,
   Key, FileSearch, Mail, Globe, ArrowRight, Terminal, Cpu, Fingerprint,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useRef, useState, useEffect, useMemo } from "react";
 import { GlitchText, CyberCard } from "./CyberEffects";
+
+// ─── Hook: detect mobile ─────────────────────────────────────────────────
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isMobile;
+}
 
 // ─── Hook: IntersectionObserver ──────────────────────────────────────────
 function useInView(ref: React.RefObject<HTMLElement | null>, opts?: { once?: boolean }) {
@@ -72,7 +86,7 @@ function TerminalLine({ text, delay }: { text: string; delay: number }) {
   );
 }
 
-// ─── Matrix Rain Canvas ──────────────────────────────────────────────────
+// ─── Matrix Rain Canvas (desktop only, optimized) ────────────────────────
 function MatrixRain() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -87,21 +101,21 @@ function MatrixRain() {
       canvas.height = canvas.offsetHeight;
     };
     resize();
-    window.addEventListener("resize", resize);
+    window.addEventListener("resize", resize, { passive: true });
 
-    const chars = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
-    const fontSize = 12;
+    const chars = "01ABCDEF";
+    const fontSize = 14;
     const columns = Math.floor(canvas.width / fontSize);
     const drops: number[] = Array(columns).fill(1);
 
     const draw = () => {
-      ctx.fillStyle = "rgba(5,5,8,0.05)";
+      ctx.fillStyle = "rgba(5,5,8,0.06)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.font = `${fontSize}px JetBrains Mono, monospace`;
+      ctx.font = `${fontSize}px monospace`;
 
       for (let i = 0; i < drops.length; i++) {
         const char = chars[Math.floor(Math.random() * chars.length)];
-        const alpha = 0.03 + Math.random() * 0.05;
+        const alpha = 0.03 + Math.random() * 0.04;
         ctx.fillStyle = i % 3 === 0
           ? `rgba(0,212,255,${alpha})`
           : i % 3 === 1
@@ -116,7 +130,8 @@ function MatrixRain() {
       }
     };
 
-    const interval = setInterval(draw, 50);
+    // 60ms interval instead of 50ms = less CPU
+    const interval = setInterval(draw, 60);
     return () => {
       clearInterval(interval);
       window.removeEventListener("resize", resize);
@@ -127,7 +142,7 @@ function MatrixRain() {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ opacity: 0.6 }}
+      style={{ opacity: 0.5 }}
     />
   );
 }
@@ -160,60 +175,34 @@ function AnimatedCounter({ target, suffix = "" }: { target: string; suffix?: str
   );
 }
 
-// ─── Hex Grid Background ─────────────────────────────────────────────────
-function HexGrid() {
+// ─── Simple Gradient Background for Mobile ───────────────────────────────
+function MobileHeroBackground() {
   return (
-    <div className="absolute inset-0 overflow-hidden">
-      <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <pattern id="hexgrid" width="56" height="100" patternUnits="userSpaceOnUse" patternTransform="scale(2)">
-            <path d="M28 66L0 50V16L28 0l28 16v34L28 66z" fill="none" stroke="#00d4ff" strokeWidth="0.5" />
-            <path d="M28 166L0 150V116L28 100l28 16v34L28 166z" fill="none" stroke="#00d4ff" strokeWidth="0.5" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#hexgrid)" />
-      </svg>
+    <div className="absolute inset-0">
+      {/* Static gradient — no animation */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(ellipse at 30% 40%, rgba(0,212,255,0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 60%, rgba(139,92,246,0.06) 0%, transparent 60%)",
+        }}
+      />
+      {/* Subtle grid */}
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage: "linear-gradient(rgba(0,212,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.3) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
     </div>
   );
 }
 
-// ─── Pulsing Radar ────────────────────────────────────────────────────────
-function PulsingRadar() {
-  return (
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-      {[0, 1, 2].map((i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full border border-[#00d4ff]/10"
-          style={{
-            width: `${300 + i * 200}px`,
-            height: `${300 + i * 200}px`,
-            top: `${-(150 + i * 100)}px`,
-            left: `${-(150 + i * 100)}px`,
-          }}
-          animate={{
-            scale: [1, 1.5, 1],
-            opacity: [0.15, 0, 0.15],
-          }}
-          transition={{
-            duration: 4,
-            delay: i * 1.3,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ─── MAIN HOMEPAGE ───────────────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════════════════════
-export function HomePage() {
+// ─── Desktop Hero Background (full effects) ──────────────────────────────
+function DesktopHeroBackground() {
   const particles = useMemo(
     () =>
-      Array.from({ length: 35 }).map((_, i) => ({
+      Array.from({ length: 15 }).map((_, i) => ({
         id: `p-${i}`,
         left: `${(i * 3.17 + 7) % 100}%`,
         top: `${(i * 6.3 + 5) % 100}%`,
@@ -226,87 +215,114 @@ export function HomePage() {
   );
 
   return (
+    <>
+      <MatrixRain />
+
+      {/* Hex grid */}
+      <div className="absolute inset-0 overflow-hidden">
+        <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="hexgrid" width="56" height="100" patternUnits="userSpaceOnUse" patternTransform="scale(2)">
+              <path d="M28 66L0 50V16L28 0l28 16v34L28 66z" fill="none" stroke="#00d4ff" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#hexgrid)" />
+        </svg>
+      </div>
+
+      {/* Pulsing radar circles — reduced to 2 */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+        {[0, 1].map((i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full border border-[#00d4ff]/10"
+            style={{
+              width: `${300 + i * 200}px`,
+              height: `${300 + i * 200}px`,
+              top: `${-(150 + i * 100)}px`,
+              left: `${-(150 + i * 100)}px`,
+            }}
+            animate={{ scale: [1, 1.5, 1], opacity: [0.15, 0, 0.15] }}
+            transition={{ duration: 4, delay: i * 1.3, repeat: Infinity, ease: "easeInOut" }}
+          />
+        ))}
+      </div>
+
+      {/* Animated grid */}
+      <div className="absolute inset-0">
+        <motion.div
+          className="absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage: "linear-gradient(rgba(0,212,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.3) 1px, transparent 1px)",
+            backgroundSize: "80px 80px",
+          }}
+          animate={{ backgroundPosition: ["0px 0px", "80px 80px"] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        />
+
+        {/* Glow orbs — reduced blur from 150/120/100 to 80 */}
+        <motion.div
+          className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-[#00d4ff]/5 rounded-full blur-[80px]"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-[#8b5cf6]/5 rounded-full blur-[80px]"
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+
+      {/* Floating particles — reduced from 35 to 15 */}
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className={`absolute ${p.size} rounded-full ${p.color}`}
+          style={{ left: p.left, top: p.top, willChange: "transform, opacity" }}
+          animate={{ y: [0, -40, 0], opacity: [0.1, 0.6, 0.1], scale: [1, 1.3, 1] }}
+          transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: "easeInOut" }}
+        />
+      ))}
+
+      {/* Network lines — reduced to 6 */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.04]">
+        {particles.slice(0, 6).map((p, i) => {
+          const next = particles[(i + 3) % particles.length];
+          return (
+            <motion.line
+              key={`line-${i}`}
+              x1={p.left} y1={p.top} x2={next.left} y2={next.top}
+              stroke="#00d4ff" strokeWidth="0.5"
+              animate={{ opacity: [0.2, 0.5, 0.2] }}
+              transition={{ duration: 3 + i * 0.5, repeat: Infinity }}
+            />
+          );
+        })}
+      </svg>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── MAIN HOMEPAGE ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+export function HomePage() {
+  const isMobile = useIsMobile();
+
+  return (
     <div>
       {/* ═══════════ HERO SECTION ═══════════ */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
-        {/* Matrix rain background */}
-        <MatrixRain />
-
-        {/* Hex grid */}
-        <HexGrid />
-
-        {/* Pulsing radar circles */}
-        <PulsingRadar />
-
-        {/* Animated grid */}
-        <div className="absolute inset-0">
-          <motion.div
-            className="absolute inset-0 opacity-[0.06]"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(0,212,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.3) 1px, transparent 1px)",
-              backgroundSize: "80px 80px",
-            }}
-            animate={{ backgroundPosition: ["0px 0px", "80px 80px"] }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          />
-
-          {/* Glow orbs */}
-          <motion.div
-            className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#00d4ff]/5 rounded-full blur-[150px]"
-            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#8b5cf6]/5 rounded-full blur-[120px]"
-            animate={{ scale: [1.2, 1, 1.2], opacity: [0.3, 0.6, 0.3] }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-[#39ff14]/3 rounded-full blur-[100px]"
-            animate={{ scale: [1, 1.3, 1] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          />
-        </div>
-
-        {/* Floating particles */}
-        {particles.map((p) => (
-          <motion.div
-            key={p.id}
-            className={`absolute ${p.size} rounded-full ${p.color}`}
-            style={{ left: p.left, top: p.top }}
-            animate={{ y: [0, -40, 0], opacity: [0.1, 0.6, 0.1], scale: [1, 1.3, 1] }}
-            transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: "easeInOut" }}
-          />
-        ))}
-
-        {/* Connecting lines between particles (network mesh) */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.04]">
-          {particles.slice(0, 12).map((p, i) => {
-            const next = particles[(i + 3) % particles.length];
-            return (
-              <motion.line
-                key={`line-${i}`}
-                x1={p.left}
-                y1={p.top}
-                x2={next.left}
-                y2={next.top}
-                stroke="#00d4ff"
-                strokeWidth="0.5"
-                animate={{ opacity: [0.2, 0.5, 0.2] }}
-                transition={{ duration: 3 + i * 0.5, repeat: Infinity }}
-              />
-            );
-          })}
-        </svg>
+        {/* Background: simple on mobile, full effects on desktop */}
+        {isMobile ? <MobileHeroBackground /> : <DesktopHeroBackground />}
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20 z-10">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left - Content */}
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
+              initial={{ opacity: 0, x: isMobile ? 0 : -50 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
             >
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -332,7 +348,7 @@ export function HomePage() {
                 className="text-[#e2e8f0] mb-6"
                 style={{
                   fontFamily: "Orbitron, sans-serif",
-                  fontSize: "clamp(2rem, 4.5vw, 3.8rem)",
+                  fontSize: "clamp(1.8rem, 4.5vw, 3.8rem)",
                   lineHeight: 1.1,
                   letterSpacing: "-0.02em",
                 }}
@@ -355,7 +371,7 @@ export function HomePage() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
                 className="text-[#94a3b8] mb-10 max-w-lg"
-                style={{ fontSize: "1.05rem", lineHeight: 1.8 }}
+                style={{ fontSize: "clamp(0.9rem, 2vw, 1.05rem)", lineHeight: 1.8 }}
               >
                 Detectez les vulnerabilites, analysez les URLs suspectes et protegez vos sites
                 avec notre suite d'outils de pentest automatises. Gratuit. Open-source.
@@ -365,11 +381,11 @@ export function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="flex flex-wrap gap-4"
+                className="flex flex-col sm:flex-row gap-3 sm:gap-4"
               >
                 <Link
                   to="/pentesting"
-                  className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,212,255,0.4)] relative overflow-hidden"
+                  className="group inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,212,255,0.4)] relative overflow-hidden"
                   style={{
                     background: "linear-gradient(135deg, #00d4ff, #0091b3)",
                     boxShadow: "0 0 30px rgba(0,212,255,0.2), inset 0 1px 0 rgba(255,255,255,0.1)",
@@ -378,19 +394,21 @@ export function HomePage() {
                     color: "#0a0a0f",
                   }}
                 >
-                  {/* Shimmer sweep */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
-                    animate={{ x: ["-200%", "200%"] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 2 }}
-                  />
+                  {/* Shimmer sweep — desktop only */}
+                  {!isMobile && (
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
+                      animate={{ x: ["-200%", "200%"] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 2 }}
+                    />
+                  )}
                   <Shield className="w-5 h-5 relative z-10" />
                   <span className="relative z-10">Analyser mon site</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform relative z-10" />
                 </Link>
                 <Link
                   to="/tools"
-                  className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl transition-all duration-300 text-[#e2e8f0] hover:text-[#00d4ff] hover:border-[#00d4ff]/30"
+                  className="group inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl transition-all duration-300 text-[#e2e8f0] hover:text-[#00d4ff] hover:border-[#00d4ff]/30"
                   style={{
                     background: "rgba(255,255,255,0.03)",
                     border: "1px solid rgba(255,255,255,0.1)",
@@ -431,100 +449,89 @@ export function HomePage() {
               </motion.div>
             </motion.div>
 
-            {/* Right - Enhanced Terminal */}
-            <motion.div
-              initial={{ opacity: 0, x: 50, rotateY: -5 }}
-              animate={{ opacity: 1, x: 0, rotateY: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="hidden lg:block"
-              style={{ perspective: "1000px" }}
-            >
+            {/* Right - Terminal (desktop only) */}
+            {!isMobile && (
               <motion.div
-                className="rounded-2xl overflow-hidden relative"
-                style={{
-                  background: "rgba(17,24,39,0.7)",
-                  border: "1px solid rgba(0,212,255,0.15)",
-                  boxShadow: "0 20px 80px rgba(0,0,0,0.5), 0 0 60px rgba(0,212,255,0.08)",
-                  backdropFilter: "blur(20px)",
-                }}
-                whileHover={{ boxShadow: "0 25px 100px rgba(0,0,0,0.6), 0 0 80px rgba(0,212,255,0.12)" }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
               >
-                {/* Animated top border */}
-                <motion.div
-                  className="absolute top-0 left-0 h-px"
-                  style={{ background: "linear-gradient(90deg, transparent, #00d4ff, #39ff14, transparent)" }}
-                  animate={{ width: ["0%", "100%"] }}
-                  transition={{ duration: 2, delay: 0.5, ease: "easeOut" }}
-                />
+                <div
+                  className="rounded-2xl overflow-hidden relative"
+                  style={{
+                    background: "rgba(17,24,39,0.7)",
+                    border: "1px solid rgba(0,212,255,0.15)",
+                    boxShadow: "0 20px 80px rgba(0,0,0,0.5), 0 0 60px rgba(0,212,255,0.08)",
+                    backdropFilter: "blur(20px)",
+                  }}
+                >
+                  {/* Animated top border */}
+                  <motion.div
+                    className="absolute top-0 left-0 h-px"
+                    style={{ background: "linear-gradient(90deg, transparent, #00d4ff, #39ff14, transparent)" }}
+                    animate={{ width: ["0%", "100%"] }}
+                    transition={{ duration: 2, delay: 0.5, ease: "easeOut" }}
+                  />
 
-                {/* Terminal header */}
-                <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-                  <motion.div
-                    className="w-3 h-3 rounded-full bg-[#ef4444]/80"
-                    whileHover={{ scale: 1.3 }}
-                  />
-                  <motion.div
-                    className="w-3 h-3 rounded-full bg-[#f59e0b]/80"
-                    whileHover={{ scale: 1.3 }}
-                  />
-                  <motion.div
-                    className="w-3 h-3 rounded-full bg-[#39ff14]/80"
-                    whileHover={{ scale: 1.3 }}
-                  />
-                  <span className="ml-2 text-[#64748b]" style={{ fontSize: "0.7rem", fontFamily: "JetBrains Mono, monospace" }}>
-                    cyberguard@terminal
-                  </span>
-                  <motion.div
-                    className="ml-auto w-2 h-2 rounded-full bg-[#39ff14]"
-                    animate={{ opacity: [1, 0.3, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  />
-                </div>
+                  {/* Terminal header */}
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
+                    <div className="w-3 h-3 rounded-full bg-[#ef4444]/80" />
+                    <div className="w-3 h-3 rounded-full bg-[#f59e0b]/80" />
+                    <div className="w-3 h-3 rounded-full bg-[#39ff14]/80" />
+                    <span className="ml-2 text-[#64748b]" style={{ fontSize: "0.7rem", fontFamily: "JetBrains Mono, monospace" }}>
+                      cyberguard@terminal
+                    </span>
+                    <motion.div
+                      className="ml-auto w-2 h-2 rounded-full bg-[#39ff14]"
+                      animate={{ opacity: [1, 0.3, 1] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    />
+                  </div>
 
-                {/* Terminal body */}
-                <div className="p-5 space-y-2.5">
-                  <TerminalLine text="cyberguard scan --target https://example.com" delay={600} />
-                  <TerminalLine text="[INFO] Initializing security scan..." delay={2200} />
-                  <TerminalLine text="[SCAN] Checking HTTP headers..." delay={3400} />
-                  <TerminalLine text="[SCAN] Testing SSL/TLS configuration..." delay={4400} />
-                  <TerminalLine text="[SCAN] Running XSS detection..." delay={5200} />
-                  <TerminalLine text="[SCAN] Analyzing SQL injection vectors..." delay={6000} />
-                  <TerminalLine text='[OK] Score: 92/100 — "Site securise"' delay={7200} />
+                  {/* Terminal body */}
+                  <div className="p-5 space-y-2.5">
+                    <TerminalLine text="cyberguard scan --target https://example.com" delay={600} />
+                    <TerminalLine text="[INFO] Initializing security scan..." delay={2200} />
+                    <TerminalLine text="[SCAN] Checking HTTP headers..." delay={3400} />
+                    <TerminalLine text="[SCAN] Testing SSL/TLS configuration..." delay={4400} />
+                    <TerminalLine text="[SCAN] Running XSS detection..." delay={5200} />
+                    <TerminalLine text="[SCAN] Analyzing SQL injection vectors..." delay={6000} />
+                    <TerminalLine text='[OK] Score: 92/100 — "Site securise"' delay={7200} />
 
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 8.2 }}
-                    className="mt-4 pt-3 border-t border-white/5"
-                  >
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        { label: "Headers", score: "A+", color: "#39ff14" },
-                        { label: "SSL", score: "A+", color: "#39ff14" },
-                        { label: "XSS", score: "B", color: "#f59e0b" },
-                      ].map((item, idx) => (
-                        <motion.div
-                          key={item.label}
-                          className="text-center p-2.5 rounded-lg relative overflow-hidden"
-                          style={{ background: `${item.color}08`, border: `1px solid ${item.color}20` }}
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{ delay: 8.4 + idx * 0.15 }}
-                        >
-                          <div style={{ fontFamily: "Orbitron, sans-serif", fontSize: "1.2rem", color: item.color }}>
-                            {item.score}
-                          </div>
-                          <div className="text-[#64748b]" style={{ fontSize: "0.65rem", fontFamily: "JetBrains Mono, monospace" }}>
-                            {item.label}
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 8.2 }}
+                      className="mt-4 pt-3 border-t border-white/5"
+                    >
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { label: "Headers", score: "A+", color: "#39ff14" },
+                          { label: "SSL", score: "A+", color: "#39ff14" },
+                          { label: "XSS", score: "B", color: "#f59e0b" },
+                        ].map((item, idx) => (
+                          <motion.div
+                            key={item.label}
+                            className="text-center p-2.5 rounded-lg relative overflow-hidden"
+                            style={{ background: `${item.color}08`, border: `1px solid ${item.color}20` }}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 8.4 + idx * 0.15 }}
+                          >
+                            <div style={{ fontFamily: "Orbitron, sans-serif", fontSize: "1.2rem", color: item.color }}>
+                              {item.score}
+                            </div>
+                            <div className="text-[#64748b]" style={{ fontSize: "0.65rem", fontFamily: "JetBrains Mono, monospace" }}>
+                              {item.label}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </div>
                 </div>
               </motion.div>
-            </motion.div>
+            )}
           </div>
         </div>
 
@@ -533,7 +540,7 @@ export function HomePage() {
       </section>
 
       {/* ═══════════ FEATURES GRID ═══════════ */}
-      <section className="py-24 bg-[#070710] relative">
+      <section className="py-16 sm:py-24 bg-[#070710] relative">
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -546,7 +553,7 @@ export function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
           >
             <div
               className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
@@ -559,46 +566,38 @@ export function HomePage() {
             </div>
             <h2
               className="text-[#e2e8f0] mb-4"
-              style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.5rem, 3vw, 2.2rem)" }}
+              style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.3rem, 3vw, 2.2rem)" }}
             >
               Suite complete de{" "}
               <span style={{ background: "linear-gradient(135deg, #00d4ff, #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                 securite
               </span>
             </h2>
-            <p className="text-[#94a3b8] max-w-2xl mx-auto" style={{ fontSize: "1rem", lineHeight: 1.7 }}>
+            <p className="text-[#94a3b8] max-w-2xl mx-auto" style={{ fontSize: "clamp(0.85rem, 2vw, 1rem)", lineHeight: 1.7 }}>
               Analysez, testez et renforcez la securite de votre presence en ligne avec nos outils gratuits.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {features.map((f, i) => (
               <motion.div
                 key={f.title}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.07 }}
+                transition={{ delay: i * 0.05 }}
               >
                 <Link to={f.link} className="group block h-full">
                   <CyberCard className="h-full">
-                    <div className="p-6 relative">
-                      {/* Hover glow effect */}
-                      <div
-                        className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-3xl"
-                        style={{ background: `${f.color}10` }}
-                      />
-
+                    <div className="p-5 sm:p-6 relative">
                       <div className="relative">
                         <div className="flex items-center gap-3 mb-4">
-                          <motion.div
+                          <div
                             className="w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110"
                             style={{ background: `${f.color}10` }}
-                            whileHover={{ rotate: [0, -5, 5, 0] }}
-                            transition={{ duration: 0.4 }}
                           >
                             <f.icon className="w-5 h-5" style={{ color: f.color }} />
-                          </motion.div>
+                          </div>
                           <span
                             className="px-2 py-0.5 rounded-full"
                             style={{
@@ -638,11 +637,11 @@ export function HomePage() {
       </section>
 
       {/* ═══════════ STATS SECTION ═══════════ */}
-      <section className="py-20 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[200px] bg-[#00d4ff]/5 rounded-full blur-[100px]" />
+      <section className="py-16 sm:py-20 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[200px] bg-[#00d4ff]/5 rounded-full blur-[80px]" />
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
             {[
               { value: "8", suffix: "+", label: "Outils disponibles", color: "#00d4ff" },
               { value: "30", suffix: "+", label: "Articles blog", color: "#39ff14" },
@@ -657,20 +656,16 @@ export function HomePage() {
                 transition={{ delay: i * 0.1 }}
               >
                 <CyberCard>
-                  <div className="text-center p-5 sm:p-6 relative group">
+                  <div className="text-center p-4 sm:p-6 relative group">
                     <div
                       className="mb-2"
-                      style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.6rem, 3vw, 2.2rem)", color: s.color }}
+                      style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.4rem, 3vw, 2.2rem)", color: s.color }}
                     >
                       <AnimatedCounter target={s.value} suffix={s.suffix} />
                     </div>
-                    <div className="text-[#64748b]" style={{ fontSize: "0.8rem" }}>
+                    <div className="text-[#64748b]" style={{ fontSize: "clamp(0.7rem, 1.5vw, 0.8rem)" }}>
                       {s.label}
                     </div>
-                    <div
-                      className="absolute bottom-0 left-1/2 -translate-x-1/2 h-px w-0 group-hover:w-3/4 transition-all duration-500"
-                      style={{ background: `linear-gradient(90deg, transparent, ${s.color}, transparent)` }}
-                    />
                   </div>
                 </CyberCard>
               </motion.div>
@@ -680,12 +675,11 @@ export function HomePage() {
       </section>
 
       {/* ═══════════ CTA SECTION ═══════════ */}
-      <section className="py-24 bg-[#070710] relative">
+      <section className="py-16 sm:py-24 bg-[#070710] relative">
         <div
-          className="absolute inset-0 opacity-[0.04]"
+          className="absolute inset-0 opacity-[0.04] hidden sm:block"
           style={{
-            backgroundImage:
-              "linear-gradient(rgba(0,212,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.2) 1px, transparent 1px)",
+            backgroundImage: "linear-gradient(rgba(0,212,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.2) 1px, transparent 1px)",
             backgroundSize: "60px 60px",
           }}
         />
@@ -714,11 +708,11 @@ export function HomePage() {
             </motion.div>
             <h2
               className="text-[#e2e8f0] mb-4"
-              style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.5rem, 3vw, 2rem)" }}
+              style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.3rem, 3vw, 2rem)" }}
             >
               Pret a securiser votre site ?
             </h2>
-            <p className="text-[#94a3b8] mb-8 max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
+            <p className="text-[#94a3b8] mb-8 max-w-xl mx-auto" style={{ lineHeight: 1.7, fontSize: "clamp(0.85rem, 2vw, 1rem)" }}>
               Lancez votre premier scan en moins de 30 secondes. Aucune inscription requise.
             </p>
             <Link
@@ -732,11 +726,13 @@ export function HomePage() {
                 color: "#0a0a0f",
               }}
             >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
-                animate={{ x: ["-200%", "200%"] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 3 }}
-              />
+              {!isMobile && (
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
+                  animate={{ x: ["-200%", "200%"] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 3 }}
+                />
+              )}
               <Shield className="w-5 h-5 relative z-10" />
               <span className="relative z-10">Lancer un scan gratuit</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform relative z-10" />

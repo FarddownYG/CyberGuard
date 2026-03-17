@@ -30,11 +30,22 @@ export function SSLCheckerPage() {
         >
           <Info className="w-5 h-5 text-[#00d4ff] flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-[#00d4ff]" style={{ fontSize: "0.9rem" }}>Outil de verification SSL bientot disponible</p>
-            <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>
-              Un outil de verification SSL en ligne sera bientot integre via notre projet SEAL.
-              En attendant, decouvrez ci-dessous pourquoi le SSL est crucial pour votre site.
+            <p className="text-[#00d4ff]" style={{ fontSize: "0.9rem" }}>Verifiez vos certificats SSL avec SEAL</p>
+            <p className="text-[#94a3b8] mb-3" style={{ fontSize: "0.8rem", lineHeight: 1.6 }}>
+              Notre outil de verification SSL est disponible via <strong className="text-[#e2e8f0]">SEAL</strong> (Secure Expiry Alert & Logging).
+              Testez la validite de vos certificats, detectez les expirations et analysez la configuration TLS de n'importe quel domaine.
             </p>
+            <a
+              href="https://seal-beta-liart.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all duration-300 hover:shadow-[0_0_25px_rgba(57,255,20,0.3)]"
+              style={{ background: "linear-gradient(135deg, #39ff14, #00d4ff)", color: "#0a0a0f", fontFamily: "Orbitron, sans-serif", fontSize: "0.82rem" }}
+            >
+              <Lock className="w-4 h-4" />
+              Lancer le SSL Checker — SEAL
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
           </div>
         </motion.div>
 
