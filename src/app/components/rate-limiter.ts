@@ -103,7 +103,7 @@ export function getGenericQuota(config: RateLimitConfig): GenericQuotaInfo {
   // Check manual block (e.g. billing error)
   if (stored.blockedUntil && stored.blockedUntil > now()) {
     isManualBlock = true;
-    manualBlockReason = stored.blockReason || "Bloque temporairement";
+    manualBlockReason = stored.blockReason || "Bloqué temporairement";
     manualBlockRemaining = Math.ceil((stored.blockedUntil - now()) / 1000);
     blockedReason = manualBlockReason;
   }
@@ -124,10 +124,10 @@ export function getGenericQuota(config: RateLimitConfig): GenericQuotaInfo {
     blockedReason = `Limite par minute atteinte (${config.minuteMax}/${config.labels.minuteLabel}).`;
   }
   if (!blockedReason && dayUsed >= config.dayMax) {
-    blockedReason = `Limite journaliere atteinte (${config.dayMax}/${config.labels.dayLabel}). Reessayez demain.`;
+    blockedReason = `Limite journalière atteinte (${config.dayMax}/${config.labels.dayLabel}). Réessayez demain.`;
   }
   if (!blockedReason && monthUsed >= config.monthMax) {
-    blockedReason = `Limite mensuelle atteinte (${config.monthMax}/${config.labels.monthLabel}). Reessayez le mois prochain.`;
+    blockedReason = `Limite mensuelle atteinte (${config.monthMax}/${config.labels.monthLabel}). Réessayez le mois prochain.`;
   }
 
   // Calculate next minute slot

@@ -13,10 +13,10 @@ export function AboutPage() {
           </div>
           <h1 style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.8rem, 3vw, 2.2rem)" }} className="text-[#e2e8f0] mb-4">
             A propos &{" "}
-            <span style={{ background: "linear-gradient(135deg, #00d4ff, #39ff14)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Mentions Legales</span>
+            <span style={{ background: "linear-gradient(135deg, #00d4ff, #39ff14)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Mentions Légales</span>
           </h1>
           <p className="text-[#94a3b8] max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
-            Notre mission, nos engagements legaux et notre politique de confidentialite.
+            Notre mission, nos engagements légaux et notre politique de confidentialité.
           </p>
         </motion.div>
 
@@ -29,9 +29,9 @@ export function AboutPage() {
             </h2>
           </div>
           <p className="text-[#94a3b8]" style={{ lineHeight: 1.8 }}>
-            CyberGuard a ete cree avec une mission simple : rendre la cybersecurite accessible a tous.
-            Que vous soyez developpeur, entrepreneur ou simplement curieux, nos outils vous permettent
-            de tester, comprendre et ameliorer la securite de vos sites web.
+            CyberGuard a été créé avec une mission simple : rendre la cybersécurité accessible à tous.
+            Que vous soyez développeur, entrepreneur ou simplement curieux, nos outils vous permettent
+            de tester, comprendre et améliorer la sécurité de vos sites web.
           </p>
 
           <div className="relative mt-6 rounded-xl overflow-hidden h-48">
@@ -54,14 +54,14 @@ export function AboutPage() {
           </div>
           <div className="bg-[#f59e0b]/5 border border-[#f59e0b]/20 rounded-lg p-4 mb-4">
             <p className="text-[#e2e8f0]" style={{ lineHeight: 1.8 }}>
-              Les outils de scan et de pentest fournis par CyberGuard doivent etre utilises
-              <span className="text-[#f59e0b]"> UNIQUEMENT sur des sites dont vous etes proprietaire</span> ou
-              pour lesquels vous avez une autorisation ecrite explicite.
+              Les outils de scan et de pentest fournis par CyberGuard doivent être utilisés
+              <span className="text-[#f59e0b]"> UNIQUEMENT sur des sites dont vous êtes propriétaire</span> ou
+              pour lesquels vous avez une autorisation écrite explicite.
             </p>
           </div>
           <p className="text-[#94a3b8]" style={{ fontSize: "0.9rem", lineHeight: 1.8 }}>
-            Toute utilisation abusive, non autorisee ou malveillante de ces outils est strictement
-            interdite et peut entrainer des poursuites judiciaires conformement aux lois en vigueur.
+            Toute utilisation abusive, non autorisée ou malveillante de ces outils est strictement
+            interdite et peut entraîner des poursuites judiciaires conformément aux lois en vigueur.
           </p>
         </div>
 
@@ -70,16 +70,16 @@ export function AboutPage() {
           <div className="flex items-center gap-3 mb-4">
             <Scale className="w-6 h-6 text-[#00d4ff]" />
             <h2 style={{ fontFamily: "Orbitron, sans-serif", fontSize: "1.2rem" }} className="text-[#e2e8f0]">
-              Conformite RGPD
+              Conformité RGPD
             </h2>
           </div>
           <div className="space-y-3">
             {[
-              "Vos donnees personnelles ne sont jamais vendues a des tiers.",
-              "Les resultats de scans sont chiffres et stockes de maniere securisee.",
-              "Vous pouvez demander la suppression de vos donnees a tout moment.",
+              "Vos données personnelles ne sont jamais vendues à des tiers.",
+              "Les résultats de scans sont chiffrés et stockés de manière sécurisée.",
+              "Vous pouvez demander la suppression de vos données à tout moment.",
               "Nous utilisons uniquement des cookies essentiels au fonctionnement du service.",
-              "Aucune donnee n'est transferee en dehors de l'Union Europeenne.",
+              "Aucune donnée n'est transférée en dehors de l'Union Européenne.",
             ].map((item) => (
               <div key={item} className="flex items-start gap-3">
                 <CheckCircle className="w-4 h-4 text-[#39ff14] flex-shrink-0 mt-0.5" />
@@ -94,11 +94,11 @@ export function AboutPage() {
           <div className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl p-6">
             <div className="flex items-center gap-3 mb-4">
               <Lock className="w-5 h-5 text-[#39ff14]" />
-              <h3 className="text-[#e2e8f0]">Politique de Confidentialite</h3>
+              <h3 className="text-[#e2e8f0]">Politique de Confidentialité</h3>
             </div>
             <p className="text-[#94a3b8]" style={{ fontSize: "0.85rem", lineHeight: 1.7 }}>
-              Nous nous engageons a proteger la vie privee de nos utilisateurs. Les donnees collectees
-              sont strictement necessaires au fonctionnement du service et sont traitees conformement
+              Nous nous engageons à protéger la vie privée de nos utilisateurs. Les données collectées
+              sont strictement nécessaires au fonctionnement du service et sont traitées conformément
               au RGPD.
             </p>
           </div>
@@ -109,8 +109,8 @@ export function AboutPage() {
               <h3 className="text-[#e2e8f0]">Conditions d'Utilisation</h3>
             </div>
             <p className="text-[#94a3b8]" style={{ fontSize: "0.85rem", lineHeight: 1.7 }}>
-              En utilisant CyberGuard, vous acceptez de ne scanner que les sites dont vous etes
-              proprietaire et de ne pas utiliser les resultats a des fins malveillantes.
+              En utilisant CyberGuard, vous acceptez de ne scanner que les sites dont vous êtes
+              propriétaire et de ne pas utiliser les résultats à des fins malveillantes.
             </p>
           </div>
         </div>
@@ -120,7 +120,7 @@ export function AboutPage() {
           <div className="flex items-center gap-3 mb-4">
             <Users className="w-6 h-6 text-[#00d4ff]" />
             <h2 style={{ fontFamily: "Orbitron, sans-serif", fontSize: "1.2rem" }} className="text-[#e2e8f0]">
-              Technologies Utilisees
+              Technologies Utilisées
             </h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

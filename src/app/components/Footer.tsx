@@ -12,9 +12,9 @@ const toolLinks = [
 ];
 
 const resourceLinks = [
-  { label: "Blog Securite", path: "/blog" },
+  { label: "Blog Sécurité", path: "/blog" },
   { label: "Page de Statut", path: "/status" },
-  { label: "A propos", path: "/about" },
+  { label: "À propos", path: "/about" },
 ];
 
 export function Footer() {
@@ -40,7 +40,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-[#64748b] mb-6" style={{ fontSize: "0.85rem", lineHeight: 1.7 }}>
-              Plateforme open-source de cybersecurite. Testez, analysez et renforcez la securite de vos sites web.
+              Plateforme open-source de cybersécurité. Testez, analysez et renforcez la sécurité de vos sites web.
             </p>
             <div className="flex gap-2">
               {[
@@ -116,7 +116,7 @@ export function Footer() {
               className="text-[#94a3b8] mb-4 tracking-[0.15em]"
               style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.7rem" }}
             >
-              SYSTEME
+              SYSTÈME
             </h4>
             <Link
               to="/status"
@@ -129,7 +129,7 @@ export function Footer() {
               </div>
               <div>
                 <p className="text-[#00d4ff]" style={{ fontSize: "0.8rem" }}>Voir le statut en direct</p>
-                <p className="text-[#64748b]" style={{ fontSize: "0.7rem" }}>Verifications temps reel</p>
+                <p className="text-[#64748b]" style={{ fontSize: "0.8rem" }}>Vérifications temps réel</p>
               </div>
             </Link>
             <div className="p-3 rounded-lg" style={{ background: "rgba(0,212,255,0.03)", border: "1px solid rgba(0,212,255,0.08)" }}>
@@ -144,19 +144,19 @@ export function Footer() {
         {/* Disclaimer */}
         <div className="pt-6 pb-2">
           <p className="text-[#3a4255] text-center max-w-3xl mx-auto" style={{ fontSize: "0.68rem", lineHeight: 1.6 }}>
-            <strong className="text-[#4a5568]">Disclaimer :</strong> CyberGuard est une plateforme mise a disposition a titre informatif et educatif uniquement, sans aucune obligation d'utilisation. L'equipe CyberGuard decline toute responsabilite quant aux consequences, dommages ou repercussions pouvant resulter de l'utilisation des outils proposes sur ce site. L'utilisateur est seul responsable de l'usage qu'il fait de ces outils et s'engage a les utiliser dans le respect de la legislation en vigueur.
+            <strong className="text-[#4a5568]">Disclaimer :</strong> CyberGuard est une plateforme mise à disposition à titre informatif et éducatif uniquement, sans aucune obligation d'utilisation. L'équipe CyberGuard décline toute responsabilité quant aux conséquences, dommages ou répercussions pouvant résulter de l'utilisation des outils proposés sur ce site. L'utilisateur est seul responsable de l'usage qu'il fait de ces outils et s'engage à les utiliser dans le respect de la législation en vigueur.
           </p>
         </div>
 
         {/* Bottom bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
           <p className="text-[#4a5568] flex items-center gap-1.5" style={{ fontSize: "0.75rem" }}>
-            &copy; 2026 CyberGuard. Fait avec <Heart className="w-3 h-3 text-[#ef4444]/50" /> pour la cybersecurite.
+            &copy; 2026 CyberGuard. Fait avec <Heart className="w-3 h-3 text-[#ef4444]/50" /> pour la cybersécurité.
           </p>
           <div className="flex items-center gap-4 text-[#4a5568]" style={{ fontSize: "0.75rem" }}>
-            <Link to="/about" className="hover:text-[#94a3b8] transition-colors">Mentions legales</Link>
+            <Link to="/about" className="hover:text-[#94a3b8] transition-colors">Mentions légales</Link>
             <span className="text-[#1e293b]">|</span>
-            <Link to="/about" className="hover:text-[#94a3b8] transition-colors">Confidentialite</Link>
+            <Link to="/about" className="hover:text-[#94a3b8] transition-colors">Confidentialité</Link>
           </div>
         </div>
       </div>

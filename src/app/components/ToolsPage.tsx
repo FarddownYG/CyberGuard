@@ -6,7 +6,7 @@ const tools = [
   {
     icon: Shield,
     title: "Pentesting Hub",
-    desc: "Pentest automatise propulse par Shannon AI. White-box analysis + exploitation dynamique reelle. Zero faux positifs.",
+    desc: "Pentest automatisé propulsé par Shannon AI. White-box analysis + exploitation dynamique réelle. Zéro faux positifs.",
     link: "/pentesting",
     color: "#00d4ff",
     glowClass: "glow-blue",
@@ -16,7 +16,7 @@ const tools = [
   {
     icon: Eye,
     title: "Analyse VirusTotal",
-    desc: "Verifiez si une URL est malveillante avec 70+ moteurs antivirus en simultane.",
+    desc: "Vérifiez si une URL est malveillante avec 70+ moteurs antivirus en simultané.",
     link: "/virustotal",
     color: "#8b5cf6",
     glowClass: "glow-purple",
@@ -26,7 +26,7 @@ const tools = [
   {
     icon: Lock,
     title: "SSL Checker",
-    desc: "Verifiez la validite de votre certificat SSL, le protocole TLS et la force du chiffrement.",
+    desc: "Vérifiez la validité de votre certificat SSL, le protocole TLS et la force du chiffrement.",
     link: "/ssl-checker",
     color: "#39ff14",
     glowClass: "glow-green",
@@ -35,8 +35,8 @@ const tools = [
   },
   {
     icon: Key,
-    title: "Generateur de Mots de Passe",
-    desc: "Generez des mots de passe cryptographiquement securises via Web Crypto API et verifiez les fuites.",
+    title: "Générateur de Mots de Passe",
+    desc: "Générez des mots de passe cryptographiquement sécurisés via Web Crypto API et vérifiez les fuites.",
     link: "/tools/password",
     color: "#f59e0b",
     glowClass: "glow-amber",
@@ -55,8 +55,8 @@ const tools = [
   },
   {
     icon: Mail,
-    title: "Verificateur d'Email",
-    desc: "Collez un email complet : detection phishing, verification des liens via VirusTotal, fautes d'orthographe.",
+    title: "Vérificateur d'Email",
+    desc: "Collez un email complet : détection phishing, vérification des liens via VirusTotal, fautes d'orthographe.",
     link: "/tools/email-checker",
     color: "#06b6d4",
     glowClass: "glow-cyan",
@@ -66,7 +66,7 @@ const tools = [
   {
     icon: Globe,
     title: "DNS Security Check",
-    desc: "Verifiez SPF, DKIM, DMARC, DNSSEC, HSTS et CAA de votre domaine.",
+    desc: "Vérifiez SPF, DKIM, DMARC, DNSSEC, HSTS et CAA de votre domaine.",
     link: "/tools/dns-checker",
     color: "#ec4899",
     glowClass: "glow-pink",
@@ -99,7 +99,7 @@ export function ToolsPage() {
             </span>
           </h1>
           <p className="text-[#94a3b8] max-w-2xl mx-auto" style={{ lineHeight: 1.7 }}>
-            Une suite complete d'outils pour analyser, tester et renforcer la securite de votre presence en ligne.
+            Une suite complète d'outils pour analyser, tester et renforcer la sécurité de votre présence en ligne.
             Tous les outils sont gratuits et fonctionnent directement dans votre navigateur.
           </p>
         </motion.div>

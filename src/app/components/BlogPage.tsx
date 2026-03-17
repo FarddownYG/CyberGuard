@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 const articles = [
   {
     title: "Comprendre les attaques XSS (Cross-Site Scripting)",
-    excerpt: "Le XSS est l'une des vulnerabilites les plus courantes sur le web. Decouvrez comment les hackers injectent du code malveillant.",
+    excerpt: "Le XSS est l'une des vulnérabilités les plus courantes sur le web. Découvrez comment les hackers injectent du code malveillant.",
     category: "Attaques Web",
     date: "12 Mars 2026",
     readTime: "8 min",
@@ -15,8 +15,8 @@ const articles = [
   },
   {
     title: "Injection SQL : le guide complet",
-    excerpt: "L'injection SQL permet a un attaquant d'acceder a votre base de donnees. Apprenez a utiliser des requetes preparees.",
-    category: "Securite BDD",
+    excerpt: "L'injection SQL permet à un attaquant d'accéder à votre base de données. Apprenez à utiliser des requêtes préparées.",
+    category: "Sécurité BDD",
     date: "10 Mars 2026",
     readTime: "12 min",
     icon: AlertTriangle,
@@ -25,7 +25,7 @@ const articles = [
   },
   {
     title: "CSRF : l'attaque invisible qui menace vos formulaires",
-    excerpt: "Le Cross-Site Request Forgery exploite la confiance du serveur. Voici comment implementer des tokens CSRF.",
+    excerpt: "Le Cross-Site Request Forgery exploite la confiance du serveur. Voici comment implémenter des tokens CSRF.",
     category: "Attaques Web",
     date: "8 Mars 2026",
     readTime: "6 min",
@@ -34,8 +34,8 @@ const articles = [
     featured: false,
   },
   {
-    title: "Securiser votre site WordPress en 2026",
-    excerpt: "WordPress alimente 40% du web mais reste une cible. Plugins de securite, configuration serveur : le guide ultime.",
+    title: "Sécuriser votre site WordPress en 2026",
+    excerpt: "WordPress alimente 40% du web mais reste une cible. Plugins de sécurité, configuration serveur : le guide ultime.",
     category: "Guides",
     date: "5 Mars 2026",
     readTime: "15 min",
@@ -44,8 +44,8 @@ const articles = [
     featured: false,
   },
   {
-    title: "Les headers HTTP de securite indispensables",
-    excerpt: "X-Frame-Options, CSP, HSTS... Les en-tetes HTTP qui protegent votre site contre les attaques courantes.",
+    title: "Les headers HTTP de sécurité indispensables",
+    excerpt: "X-Frame-Options, CSP, HSTS... Les en-têtes HTTP qui protègent votre site contre les attaques courantes.",
     category: "Configuration",
     date: "2 Mars 2026",
     readTime: "10 min",
@@ -54,30 +54,30 @@ const articles = [
     featured: false,
   },
   {
-    title: "Phishing : identifier et eviter les arnaques",
-    excerpt: "Le phishing reste la menace numero 1. Apprenez a reconnaitre les emails frauduleux et les faux sites.",
+    title: "Phishing : identifier et éviter les arnaques",
+    excerpt: "Le phishing reste la menace numéro 1. Apprenez à reconnaître les emails frauduleux et les faux sites.",
     category: "Sensibilisation",
-    date: "28 Fev 2026",
+    date: "28 Fév 2026",
     readTime: "7 min",
     icon: AlertTriangle,
     color: "#f59e0b",
     featured: false,
   },
   {
-    title: "Ransomware : comment se proteger en entreprise",
-    excerpt: "Les ransomwares ont coute 20 milliards en 2025. Strategies de backup, segmentation reseau et plan de reponse.",
+    title: "Ransomware : comment se protéger en entreprise",
+    excerpt: "Les ransomwares ont coûté 20 milliards en 2025. Stratégies de backup, segmentation réseau et plan de réponse.",
     category: "Entreprise",
-    date: "25 Fev 2026",
+    date: "25 Fév 2026",
     readTime: "14 min",
     icon: Lock,
     color: "#ef4444",
     featured: false,
   },
   {
-    title: "Zero Trust Architecture : le futur de la securite",
-    excerpt: "Ne jamais faire confiance, toujours verifier. Implementez une architecture Zero Trust dans votre organisation.",
+    title: "Zero Trust Architecture : le futur de la sécurité",
+    excerpt: "Ne jamais faire confiance, toujours vérifier. Implémentez une architecture Zero Trust dans votre organisation.",
     category: "Architecture",
-    date: "22 Fev 2026",
+    date: "22 Fév 2026",
     readTime: "11 min",
     icon: Shield,
     color: "#8b5cf6",
@@ -85,9 +85,9 @@ const articles = [
   },
   {
     title: "API Security : les 10 erreurs les plus courantes",
-    excerpt: "BOLA, injection, rate limiting manquant... Les failles API les plus exploitees et comment les corriger.",
+    excerpt: "BOLA, injection, rate limiting manquant... Les failles API les plus exploitées et comment les corriger.",
     category: "API",
-    date: "20 Fev 2026",
+    date: "20 Fév 2026",
     readTime: "13 min",
     icon: Code,
     color: "#00d4ff",
@@ -95,9 +95,9 @@ const articles = [
   },
   {
     title: "Authentification multi-facteurs (MFA) : guide complet",
-    excerpt: "TOTP, FIDO2, biometrie... Quelle methode MFA choisir et comment l'implementer correctement.",
+    excerpt: "TOTP, FIDO2, biométrie... Quelle méthode MFA choisir et comment l'implémenter correctement.",
     category: "Authentification",
-    date: "18 Fev 2026",
+    date: "18 Fév 2026",
     readTime: "9 min",
     icon: Fingerprint,
     color: "#39ff14",
@@ -105,78 +105,78 @@ const articles = [
   },
   {
     title: "OWASP Top 10 2026 : les nouvelles menaces",
-    excerpt: "La liste actualisee des 10 vulnerabilites web les plus critiques. Ce qui a change et les nouvelles entrees.",
+    excerpt: "La liste actualisée des 10 vulnérabilités web les plus critiques. Ce qui a changé et les nouvelles entrées.",
     category: "Standards",
-    date: "15 Fev 2026",
+    date: "15 Fév 2026",
     readTime: "16 min",
     icon: Layers,
     color: "#f59e0b",
     featured: false,
   },
   {
-    title: "Securite des conteneurs Docker",
-    excerpt: "Images minimales, scan de vulnerabilites, rootless containers... Securisez vos deploiements Docker.",
+    title: "Sécurité des conteneurs Docker",
+    excerpt: "Images minimales, scan de vulnérabilités, rootless containers... Sécurisez vos déploiements Docker.",
     category: "DevOps",
-    date: "12 Fev 2026",
+    date: "12 Fév 2026",
     readTime: "10 min",
     icon: Server,
     color: "#06b6d4",
     featured: false,
   },
   {
-    title: "Ingenierie sociale : les techniques des hackers",
-    excerpt: "Pretexting, baiting, tailgating... Comment les attaquants manipulent les humains pour penetrer vos systemes.",
+    title: "Ingénierie sociale : les techniques des hackers",
+    excerpt: "Pretexting, baiting, tailgating... Comment les attaquants manipulent les humains pour pénétrer vos systèmes.",
     category: "Sensibilisation",
-    date: "10 Fev 2026",
+    date: "10 Fév 2026",
     readTime: "8 min",
     icon: Eye,
     color: "#ec4899",
     featured: false,
   },
   {
-    title: "VPN : mythes et realites en 2026",
+    title: "VPN : mythes et réalités en 2026",
     excerpt: "Un VPN vous rend-il vraiment anonyme ? Les limites, les bons usages et comment choisir le bon service.",
-    category: "Reseau",
-    date: "8 Fev 2026",
+    category: "Réseau",
+    date: "8 Fév 2026",
     readTime: "7 min",
     icon: Network,
     color: "#8b5cf6",
     featured: false,
   },
   {
-    title: "Cryptographie pour les debutants",
-    excerpt: "Symetrique, asymetrique, hashage... Comprendre les bases de la cryptographie moderne sans formules complexes.",
+    title: "Cryptographie pour les débutants",
+    excerpt: "Symétrique, asymétrique, hashage... Comprendre les bases de la cryptographie moderne sans formules complexes.",
     category: "Fondamentaux",
-    date: "5 Fev 2026",
+    date: "5 Fév 2026",
     readTime: "12 min",
     icon: Key,
     color: "#f59e0b",
     featured: false,
   },
   {
-    title: "Securiser un serveur Linux en 10 etapes",
-    excerpt: "SSH hardening, firewall, fail2ban, mises a jour auto... Le checklist essentiel pour tout admin sys.",
-    category: "Systeme",
-    date: "3 Fev 2026",
+    title: "Sécuriser un serveur Linux en 10 étapes",
+    excerpt: "SSH hardening, firewall, fail2ban, mises à jour auto... Le checklist essentiel pour tout admin sys.",
+    category: "Système",
+    date: "3 Fév 2026",
     readTime: "15 min",
     icon: Server,
     color: "#39ff14",
     featured: false,
   },
   {
-    title: "DNS over HTTPS (DoH) : vie privee vs securite",
-    excerpt: "Le chiffrement DNS ameliore la vie privee mais complique le filtrage. Analyse des avantages et inconvenients.",
-    category: "Reseau",
-    date: "1 Fev 2026",
+    title: "DNS over HTTPS (DoH) : vie privée vs sécurité",
+    excerpt: "Le chiffrement DNS améliore la vie privée mais complique le filtrage. Analyse des avantages et inconvénients.",
+    category: "Réseau",
+    date: "1 Fév 2026",
     readTime: "9 min",
     icon: Globe,
     color: "#00d4ff",
     featured: false,
   },
   {
-    title: "Bug Bounty : comment gagner de l'argent ethiquement",
-    excerpt: "Plateformes, methodologie, redaction de rapports... Le guide pour debuter dans le bug bounty en 2026.",
-    category: "Carriere",
+    title: "Bug Bounty : comment gagner de l'argent éthiquement",
+    excerpt: "Plateformes, méthodologie, rédaction de rapports... Le guide pour débuter dans le bug bounty en 2026.",
+    category: "Carrière",
     date: "28 Jan 2026",
     readTime: "11 min",
     icon: Bug,
@@ -184,8 +184,8 @@ const articles = [
     featured: false,
   },
   {
-    title: "Securite IoT : vos objets connectes sont-ils proteges ?",
-    excerpt: "Cameras, assistants vocaux, domotique... Les risques de l'IoT et comment securiser votre reseau domestique.",
+    title: "Sécurité IoT : vos objets connectés sont-ils protégés ?",
+    excerpt: "Caméras, assistants vocaux, domotique... Les risques de l'IoT et comment sécuriser votre réseau domestique.",
     category: "IoT",
     date: "25 Jan 2026",
     readTime: "8 min",
@@ -194,8 +194,8 @@ const articles = [
     featured: false,
   },
   {
-    title: "Analyse forensique : les bases de l'investigation numerique",
-    excerpt: "Collecte de preuves, analyse memoire, timeline... Introduction a la forensique numerique pour debutants.",
+    title: "Analyse forensique : les bases de l'investigation numérique",
+    excerpt: "Collecte de preuves, analyse mémoire, timeline... Introduction à la forensique numérique pour débutants.",
     category: "Forensique",
     date: "22 Jan 2026",
     readTime: "13 min",
@@ -204,8 +204,8 @@ const articles = [
     featured: false,
   },
   {
-    title: "Securite mobile : Android vs iOS en 2026",
-    excerpt: "Permissions, sandboxing, chiffrement... Comparaison objective de la securite des deux ecosystemes mobiles.",
+    title: "Sécurité mobile : Android vs iOS en 2026",
+    excerpt: "Permissions, sandboxing, chiffrement... Comparaison objective de la sécurité des deux écosystèmes mobiles.",
     category: "Mobile",
     date: "20 Jan 2026",
     readTime: "10 min",
@@ -215,7 +215,7 @@ const articles = [
   },
   {
     title: "Supply Chain Attack : la menace invisible",
-    excerpt: "SolarWinds, Log4j, npm malveillants... Comment les attaquants compromettent vos dependances logicielles.",
+    excerpt: "SolarWinds, Log4j, npm malveillants... Comment les attaquants compromettent vos dépendances logicielles.",
     category: "Menaces",
     date: "18 Jan 2026",
     readTime: "9 min",
@@ -224,9 +224,9 @@ const articles = [
     featured: false,
   },
   {
-    title: "RGPD et cybersecurite : obligations legales",
-    excerpt: "DPO, notification de breche, PIA... Ce que le RGPD exige en matiere de securite des donnees personnelles.",
-    category: "Legal",
+    title: "RGPD et cybersécurité : obligations légales",
+    excerpt: "DPO, notification de brèche, PIA... Ce que le RGPD exige en matière de sécurité des données personnelles.",
+    category: "Légal",
     date: "15 Jan 2026",
     readTime: "11 min",
     icon: Shield,
@@ -234,8 +234,8 @@ const articles = [
     featured: false,
   },
   {
-    title: "Intelligence Artificielle et cybersecurite",
-    excerpt: "L'IA au service de la detection d'intrusions, mais aussi utilisee par les attaquants. Le double tranchant.",
+    title: "Intelligence Artificielle et cybersécurité",
+    excerpt: "L'IA au service de la détection d'intrusions, mais aussi utilisée par les attaquants. Le double tranchant.",
     category: "IA",
     date: "12 Jan 2026",
     readTime: "14 min",
@@ -254,8 +254,8 @@ const articles = [
     featured: false,
   },
   {
-    title: "Securiser ses mots de passe : gestionnaires et bonnes pratiques",
-    excerpt: "Bitwarden, KeePass, 1Password... Comparatif des gestionnaires et regles d'or pour des mots de passe solides.",
+    title: "Sécuriser ses mots de passe : gestionnaires et bonnes pratiques",
+    excerpt: "Bitwarden, KeePass, 1Password... Comparatif des gestionnaires et règles d'or pour des mots de passe solides.",
     category: "Guides",
     date: "8 Jan 2026",
     readTime: "8 min",
@@ -264,8 +264,8 @@ const articles = [
     featured: false,
   },
   {
-    title: "WAF : Web Application Firewall explique simplement",
-    excerpt: "ModSecurity, Cloudflare WAF, AWS WAF... Comment un WAF protege vos applications et comment le configurer.",
+    title: "WAF : Web Application Firewall expliqué simplement",
+    excerpt: "ModSecurity, Cloudflare WAF, AWS WAF... Comment un WAF protège vos applications et comment le configurer.",
     category: "Configuration",
     date: "5 Jan 2026",
     readTime: "10 min",
@@ -274,8 +274,8 @@ const articles = [
     featured: false,
   },
   {
-    title: "Dark Web : mythes, realites et risques",
-    excerpt: "Tor, marchands noirs, fuites de donnees... Ce qui se passe vraiment sur le dark web et comment s'en proteger.",
+    title: "Dark Web : mythes, réalités et risques",
+    excerpt: "Tor, marchands noirs, fuites de données... Ce qui se passe vraiment sur le dark web et comment s'en protéger.",
     category: "Sensibilisation",
     date: "3 Jan 2026",
     readTime: "9 min",
@@ -284,8 +284,8 @@ const articles = [
     featured: false,
   },
   {
-    title: "Securite du cloud : AWS, Azure, GCP",
-    excerpt: "IAM, chiffrement, compliance... Les bonnes pratiques de securite pour les trois grands clouds publics.",
+    title: "Sécurité du cloud : AWS, Azure, GCP",
+    excerpt: "IAM, chiffrement, compliance... Les bonnes pratiques de sécurité pour les trois grands clouds publics.",
     category: "Cloud",
     date: "1 Jan 2026",
     readTime: "13 min",
@@ -294,9 +294,9 @@ const articles = [
     featured: false,
   },
   {
-    title: "Pentest Wi-Fi : securisez votre reseau sans fil",
-    excerpt: "WPA3, evil twin, deauthentication... Les techniques d'attaque Wi-Fi et comment s'en proteger efficacement.",
-    category: "Reseau",
+    title: "Pentest Wi-Fi : sécurisez votre réseau sans fil",
+    excerpt: "WPA3, evil twin, deauthentication... Les techniques d'attaque Wi-Fi et comment s'en protéger efficacement.",
+    category: "Réseau",
     date: "28 Dec 2025",
     readTime: "11 min",
     icon: Wifi,
@@ -336,11 +336,11 @@ export function BlogPage() {
           >
             Blog{" "}
             <span style={{ background: "linear-gradient(135deg, #00d4ff, #39ff14)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              Cybersecurite
+              Cybersecurité
             </span>
           </h1>
           <p className="text-[#94a3b8] max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
-            Articles pedagogiques, guides de securite et alertes pour rester informe des dernieres menaces.
+            Articles pédagogiques, guides de sécurité et alertes pour rester informé des dernières menaces.
           </p>
         </motion.div>
 
@@ -411,7 +411,7 @@ export function BlogPage() {
                       {article.category}
                     </span>
                     <span className="px-2 py-0.5 rounded-full" style={{ fontSize: "0.6rem", color: "#f59e0b", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)", fontFamily: "JetBrains Mono, monospace" }}>
-                      A la une
+                      À la une
                     </span>
                   </div>
 
@@ -481,7 +481,7 @@ export function BlogPage() {
         {filteredArticles.length === 0 && (
           <div className="text-center py-16">
             <Search className="w-12 h-12 text-[#64748b] mx-auto mb-4" />
-            <p className="text-[#94a3b8]">Aucun article ne correspond a votre recherche.</p>
+            <p className="text-[#94a3b8]">Aucun article ne correspond à votre recherche.</p>
           </div>
         )}
       </div>

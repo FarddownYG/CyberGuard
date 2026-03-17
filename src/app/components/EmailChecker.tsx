@@ -232,9 +232,9 @@ function detectSpellingErrors(text: string): SpellingError[] {
   const cyrillicMatches = text.match(/[\u0400-\u04FF]/g);
   if (cyrillicMatches && cyrillicMatches.length > 0 && cyrillicMatches.length < 20) {
     errors.push({
-      word: "Caracteres cyrilliques detectes",
+      word: "Caractères cyrilliques détectés",
       suggestion: "Attaque par homoglyphes possible (lettres similaires d'un autre alphabet)",
-      context: `${cyrillicMatches.length} caractere(s) cyrillique(s) dans un texte latin`,
+      context: `${cyrillicMatches.length} caractère(s) cyrillique(s) dans un texte latin`,
     });
   }
   return errors;
@@ -248,13 +248,13 @@ function scanLink(url: string): LinkScanResult {
   const threats: string[] = [];
   const lowerUrl = url.toLowerCase();
 
-  if (/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url)) threats.push("URL avec adresse IP directe — tres suspect");
-  if (suspiciousShorteners.some(d => lowerUrl.includes(d))) threats.push("Raccourcisseur d'URL — masque la destination reelle");
-  if (dangerousTLDs.some(t => lowerUrl.includes(t))) threats.push("Extension de domaine souvent utilisee pour le phishing");
-  if (phishingUrlKeywords.some(k => lowerUrl.includes(k))) threats.push("Mots-cles de phishing dans l'URL");
+  if (/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url)) threats.push("URL avec adresse IP directe — très suspect");
+  if (suspiciousShorteners.some(d => lowerUrl.includes(d))) threats.push("Raccourcisseur d'URL — masque la destination réelle");
+  if (dangerousTLDs.some(t => lowerUrl.includes(t))) threats.push("Extension de domaine souvent utilisée pour le phishing");
+  if (phishingUrlKeywords.some(k => lowerUrl.includes(k))) threats.push("Mots-clés de phishing dans l'URL");
   if ((url.match(/-/g) || []).length > 3) threats.push("Nombre excessif de tirets dans le domaine");
   if ((url.match(/\./g) || []).length > 4) threats.push("Nombre excessif de sous-domaines");
-  if (lowerUrl.includes("@")) threats.push("Caractere @ dans l'URL — technique de masquage");
+  if (lowerUrl.includes("@")) threats.push("Caractère @ dans l'URL — technique de masquage");
   if (/https?:\/\/[^/]*\d{5,}/.test(url)) threats.push("Suite de chiffres dans le domaine — suspect");
   // Check if it looks like it's impersonating a real domain
   const fakePatterns = ["paypal", "google", "apple", "microsoft", "amazon", "netflix", "facebook", "instagram", "whatsapp", "dhl", "laposte", "colissimo", "chronopost", "ameli", "impots", "caf", "cpam"];
@@ -325,81 +325,81 @@ async function analyzeWithGemini(email: string, content: string): Promise<Gemini
 
   const domain = email.split("@")[1]?.toLowerCase() || "";
 
-  const prompt = `Tu es un analyste senior en cybersecurite specialise dans la detection avancee de phishing, scam, social engineering et fraude par email. Tu as 15 ans d'experience dans l'analyse forensique d'emails malveillants.
+  const prompt = `Tu es un analyste senior en cybersécurité spécialisé dans la détection avancée de phishing, scam, social engineering et fraude par email. Tu as 15 ans d'expérience dans l'analyse forensique d'emails malveillants.
 
-MISSION : Analyse cet email avec une rigueur maximale. Chaque detail compte.
+MISSION : Analyse cet email avec une rigueur maximale. Chaque détail compte.
 
 ═══════════════════════════════════════════
-DONNEES A ANALYSER
+DONNÉES À ANALYSER
 ═══════════════════════════════════════════
 
-**Adresse expediteur :** ${email}
+**Adresse expéditeur :** ${email}
 **Domaine :** ${domain}
 
 **Contenu complet du mail :**
 ${content || "(aucun contenu fourni — analyse uniquement l'adresse)"}
 
 ═══════════════════════════════════════════
-CRITERES D'ANALYSE (tous obligatoires)
+CRITÈRES D'ANALYSE (tous obligatoires)
 ═══════════════════════════════════════════
 
-1. VALIDITE SYNTAXIQUE : L'adresse respecte-t-elle RFC 5322 ? Caracteres interdits ? Longueur anormale ?
+1. VALIDITÉ SYNTAXIQUE : L'adresse respecte-t-elle RFC 5322 ? Caractères interdits ? Longueur anormale ?
 
 2. ANALYSE DU DOMAINE :
    - Le domaine existe-t-il ? Est-il connu ?
    - Y a-t-il des sous-domaines suspects ?
-   - Le TLD est-il associe au spam (.xyz, .tk, .top, .click...) ?
+   - Le TLD est-il associé au spam (.xyz, .tk, .top, .click...) ?
    - Y a-t-il du punycode/IDN (internationalized domain name) ?
 
-3. VERIFICATION MX IMPLICITE :
+3. VÉRIFICATION MX IMPLICITE :
    - Le domaine semble-t-il capable de recevoir des emails ?
    - Est-ce un domaine d'entreprise, de webmail, ou suspect ?
 
-4. DETECTION DE DOMAINES JETABLES :
+4. DÉTECTION DE DOMAINES JETABLES :
    - Est-ce un service d'email temporaire/jetable connu ?
-   - Y a-t-il des indicateurs de domaine ephemere ?
+   - Y a-t-il des indicateurs de domaine éphémère ?
 
 5. TYPOSQUATTING & HOMOGLYPHES :
    - Le domaine imite-t-il un service connu (gogle.com, paypa1.com, amaz0n.com) ?
-   - Y a-t-il des caracteres Unicode/cyrilliques qui ressemblent a des lettres latines ?
+   - Y a-t-il des caractères Unicode/cyrilliques qui ressemblent à des lettres latines ?
    - Le nom de domaine utilise-t-il des substitutions (0 pour O, 1 pour l, rn pour m) ?
 
 6. ANALYSE DU CONTENU (si fourni) :
-   - Tactiques de manipulation : urgence, peur, appat du gain, autorite, rarete
-   - Social engineering : usurpation d'identite, pretexting, quid pro quo
+   - Tactiques de manipulation : urgence, peur, appât du gain, autorité, rareté
+   - Social engineering : usurpation d'identité, pretexting, quid pro quo
    - Demande d'informations sensibles (mots de passe, CB, codes, etc.)
    - Liens suspects dans le texte
-   - Coherence linguistique (fautes volontaires, traduction automatique ?)
-   - Headers suspects mentionnes
-   - Pieces jointes suspectes mentionnees
+   - Cohérence linguistique (fautes volontaires, traduction automatique ?)
+   - Headers suspects mentionnés
+   - Pièces jointes suspectes mentionnées
 
-7. SCORE DE CONFIANCE : De 0 (certainement safe) a 100 (certainement malveillant)
+7. SCORE DE CONFIANCE : De 0 (certainement safe) à 100 (certainement malveillant)
 
 ═══════════════════════════════════════════
-FORMAT DE REPONSE
+FORMAT DE RÉPONSE
 ═══════════════════════════════════════════
 
-Reponds UNIQUEMENT en JSON valide, sans markdown, sans backticks :
+Réponds UNIQUEMENT en JSON valide, sans markdown, sans backticks :
 
 {
   "verdict": "safe" | "suspicious" | "dangerous",
   "confidence": <nombre 0-100>,
-  "summary": "<resume de l'analyse en 2-3 phrases percutantes>",
-  "details": ["<point d'analyse detaille 1>", "<point 2>", ...],
-  "tactics": ["<tactique de manipulation detectee>", ...],
-  "domain_analysis": "<analyse complete du domaine : structure, reputation, age estime, coherence>",
+  "summary": "<résumé de l'analyse en 2-3 phrases percutantes>",
+  "details": ["<point d'analyse détaillé 1>", "<point 2>", ...],
+  "tactics": ["<tactique de manipulation détectée>", ...],
+  "domain_analysis": "<analyse complète du domaine : structure, réputation, âge estimé, cohérence>",
   "mx_analysis": "<analyse MX : le domaine peut-il envoyer/recevoir des emails ? Quel fournisseur MX utilise-t-il ?>",
-  "header_red_flags": ["<indicateur suspect dans les headers/metadonnees>", ...],
-  "social_engineering_score": <nombre 0-100 representant le niveau de manipulation sociale>,
-  "recommended_action": "<action recommandee : ignorer / verifier / signaler / supprimer immediatement>"
+  "header_red_flags": ["<indicateur suspect dans les headers/métadonnées>", ...],
+  "social_engineering_score": <nombre 0-100 représentant le niveau de manipulation sociale>,
+  "recommended_action": "<action recommandée : ignorer / vérifier / signaler / supprimer immédiatement>"
 }
 
-REGLES STRICTES :
-- Un email de service client LEGITIME n'utilise JAMAIS : urgence extreme, menaces, liens raccourcis, demandes de credentials.
-- Si le domaine ne correspond pas a la marque mentionnee dans le contenu → phishing probable.
+RÈGLES STRICTES :
+- Un email de service client LÉGITIME n'utilise JAMAIS : urgence extrême, menaces, liens raccourcis, demandes de credentials.
+- Si le domaine ne correspond pas à la marque mentionnée dans le contenu → phishing probable.
 - Si le contenu demande TOUTE information sensible → c'est du phishing, POINT FINAL.
-- Les vrais services s'adressent par nom/prenom, jamais "Cher client" ou "Cher utilisateur".
-- Reponds en francais. Sois precis, factuel, et sans ambiguite.`;
+- Les vrais services s'adressent par nom/prénom, jamais "Cher client" ou "Cher utilisateur".
+- Réponds en français. Sois précis, factuel, et sans ambiguïté.`;
 
   try {
     const response = await fetch(
@@ -420,7 +420,7 @@ REGLES STRICTES :
     if (!response.ok) {
       // Check for rate limit
       if (response.status === 429) {
-        return { verdict: "suspicious", confidence: 0, summary: "Limite d'API Gemini atteinte. L'analyse IA est temporairement indisponible.", details: ["Rate limit Gemini atteint. Reessayez dans quelques minutes."], tactics: [], domain_analysis: "", mx_analysis: "", header_red_flags: [], social_engineering_score: 0, recommended_action: "Reessayez dans quelques minutes." };
+        return { verdict: "suspicious", confidence: 0, summary: "Limite d'API Gemini atteinte. L'analyse IA est temporairement indisponible.", details: ["Rate limit Gemini atteint. Réessayez dans quelques minutes."], tactics: [], domain_analysis: "", mx_analysis: "", header_red_flags: [], social_engineering_score: 0, recommended_action: "Réessayez dans quelques minutes." };
       }
       return null;
     }
@@ -464,13 +464,13 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
       checks.push({
         label: "Sentiment d'urgence",
         status: urgencyMatches.length >= 3 ? "fail" : "warn",
-        detail: `${urgencyMatches.length} indicateur(s) d'urgence detecte(s). Les emails de phishing creent de la pression pour vous empecher de reflechir.`,
-        fix: "Ne cedez JAMAIS a l'urgence d'un email. Les services legitimes vous laissent toujours le temps de reagir. C'est la technique de manipulation #1 des arnaqueurs.",
+        detail: `${urgencyMatches.length} indicateur(s) d'urgence détecté(s). Les emails de phishing créent de la pression pour vous empêcher de réfléchir.`,
+        fix: "Ne cédez JAMAIS à l'urgence d'un email. Les services légitimes vous laissent toujours le temps de réagir. C'est la technique de manipulation #1 des arnaqueurs.",
         priority: 0,
       });
       riskPoints += urgencyMatches.length >= 3 ? 25 : 12;
     } else {
-      checks.push({ label: "Sentiment d'urgence", status: "pass", detail: "Pas de pression temporelle detectee.", priority: 0 });
+      checks.push({ label: "Sentiment d'urgence", status: "pass", detail: "Pas de pression temporelle détectée.", priority: 0 });
     }
   }
 
@@ -481,8 +481,8 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
       checks.push({
         label: "Demande d'informations sensibles",
         status: "fail",
-        detail: `Le message demande des informations sensibles (${infoMatches.length} type(s) detecte(s) : mot de passe, coordonnees bancaires, code, etc.).`,
-        fix: "JAMAIS un service legitime ne vous demandera votre mot de passe, vos coordonnees bancaires ou un code par email. C'est du phishing a 100%.",
+        detail: `Le message demande des informations sensibles (${infoMatches.length} type(s) détecté(s) : mot de passe, coordonnées bancaires, code, etc.).`,
+        fix: "JAMAIS un service légitime ne vous demandera votre mot de passe, vos coordonnées bancaires ou un code par email. C'est du phishing à 100%.",
         priority: 1,
       });
       riskPoints += 35;
@@ -495,15 +495,15 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
     const uniqueKeywords = [...new Set(foundKeywords)];
     if (uniqueKeywords.length > 0) {
       checks.push({
-        label: "Mots-cles suspects",
+        label: "Mots-clés suspects",
         status: uniqueKeywords.length >= 4 ? "fail" : "warn",
-        detail: `${uniqueKeywords.length} mots-cles suspects : "${uniqueKeywords.slice(0, 5).join('", "')}".${uniqueKeywords.length > 5 ? ` Et ${uniqueKeywords.length - 5} autres.` : ""}`,
-        fix: "Les emails de phishing utilisent des termes alarmistes et des formulations generiques. Un service reel s'adresse a vous par votre nom et n'utilise pas de menaces.",
+        detail: `${uniqueKeywords.length} mots-clés suspects : "${uniqueKeywords.slice(0, 5).join('", "')}".${uniqueKeywords.length > 5 ? ` Et ${uniqueKeywords.length - 5} autres.` : ""}`,
+        fix: "Les emails de phishing utilisent des termes alarmistes et des formulations génériques. Un service réel s'adresse à vous par votre nom et n'utilise pas de menaces.",
         priority: 2,
       });
       riskPoints += uniqueKeywords.length >= 4 ? 25 : uniqueKeywords.length >= 2 ? 15 : 8;
     } else {
-      checks.push({ label: "Mots-cles suspects", status: "pass", detail: "Aucun mot-cle de phishing detecte.", priority: 2 });
+      checks.push({ label: "Mots-clés suspects", status: "pass", detail: "Aucun mot-clé de phishing détecté.", priority: 2 });
     }
   }
 
@@ -515,10 +515,10 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
       detectedLinks = urls.map(u => scanLink(u));
       const dangerousLinks = detectedLinks.filter(l => !l.safe);
       checks.push({
-        label: "Liens detectes — analyse heuristique",
+        label: "Liens détectés — analyse heuristique",
         status: dangerousLinks.length > 0 ? "fail" : urls.length > 5 ? "warn" : "pass",
-        detail: `${urls.length} lien(s) detecte(s). ${dangerousLinks.length > 0 ? `${dangerousLinks.length} lien(s) signale(s) comme suspects.` : "Aucun indicateur de danger detecte."}`,
-        fix: dangerousLinks.length > 0 ? "NE CLIQUEZ PAS sur les liens signales. Survolez pour verifier l'URL reelle. Allez directement sur le site officiel en tapant l'adresse." : undefined,
+        detail: `${urls.length} lien(s) détecté(s). ${dangerousLinks.length > 0 ? `${dangerousLinks.length} lien(s) signalé(s) comme suspects.` : "Aucun indicateur de danger détecté."}`,
+        fix: dangerousLinks.length > 0 ? "NE CLIQUEZ PAS sur les liens signalés. Survolez pour vérifier l'URL réelle. Allez directement sur le site officiel en tapant l'adresse." : undefined,
         priority: 3,
       });
       if (dangerousLinks.length > 0) riskPoints += 25;
@@ -533,7 +533,7 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
     label: "Format de l'email (RFC 5322)",
     status: isValidFormat ? "pass" : "fail",
     detail: isValidFormat ? "Le format de l'adresse email est valide (conforme RFC 5322)." : "Le format de l'adresse email est invalide. Ne respecte pas RFC 5322.",
-    fix: isValidFormat ? undefined : "Verifiez que l'adresse contient un @ suivi d'un domaine valide avec un TLD.",
+    fix: isValidFormat ? undefined : "Vérifiez que l'adresse contient un @ suivi d'un domaine valide avec un TLD.",
     priority: 5,
   });
   if (!isValidFormat) riskPoints += 30;
@@ -547,7 +547,7 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
         label: "Structure du domaine",
         status: "fail",
         detail: `Le domaine "${domainInfo.domain}" a une structure invalide.`,
-        fix: "Un domaine valide contient uniquement des lettres, chiffres et tirets, separes par des points.",
+        fix: "Un domaine valide contient uniquement des lettres, chiffres et tirets, séparés par des points.",
         priority: 4,
       });
       riskPoints += 20;
@@ -555,8 +555,8 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
       checks.push({
         label: "Structure du domaine",
         status: "warn",
-        detail: `Le domaine "${domainInfo.domain}" contient ${domainInfo.subdomainCount} sous-domaines. Les domaines de phishing utilisent souvent des sous-domaines multiples pour paraître legitimes.`,
-        fix: "Un nombre excessif de sous-domaines est suspect. Verifiez le domaine principal.",
+        detail: `Le domaine "${domainInfo.domain}" contient ${domainInfo.subdomainCount} sous-domaines. Les domaines de phishing utilisent souvent des sous-domaines multiples pour paraître légitimes.`,
+        fix: "Un nombre excessif de sous-domaines est suspect. Vérifiez le domaine principal.",
         priority: 4,
       });
       riskPoints += 10;
@@ -569,8 +569,8 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
       checks.push({
         label: "Domaine internationalisé (punycode)",
         status: "fail",
-        detail: `Le domaine utilise un encodage punycode (xn--...). C'est une technique classique d'attaque par homoglyphe pour imiter des domaines legitimes.`,
-        fix: "Les domaines en punycode peuvent afficher des caracteres Unicode qui ressemblent a des lettres latines. Verifiez tres attentivement le domaine.",
+        detail: `Le domaine utilise un encodage punycode (xn--...). C'est une technique classique d'attaque par homoglyphe pour imiter des domaines légitimes.`,
+        fix: "Les domaines en punycode peuvent afficher des caractères Unicode qui ressemblent à des lettres latines. Vérifiez très attentivement le domaine.",
         priority: 3,
       });
       riskPoints += 30;
@@ -583,8 +583,8 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
       checks.push({
         label: "Enregistrements MX",
         status: "fail",
-        detail: `Aucun enregistrement MX trouve pour "${domain}". Ce domaine ne peut pas recevoir d'emails — il est tres probablement faux ou inactif.`,
-        fix: "Un domaine sans enregistrement MX ne peut ni envoyer ni recevoir d'emails. L'adresse est tres probablement frauduleuse.",
+        detail: `Aucun enregistrement MX trouvé pour "${domain}". Ce domaine ne peut pas recevoir d'emails — il est très probablement faux ou inactif.`,
+        fix: "Un domaine sans enregistrement MX ne peut ni envoyer ni recevoir d'emails. L'adresse est très probablement frauduleuse.",
         priority: 5,
       });
       riskPoints += 25;
@@ -595,7 +595,7 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
       checks.push({
         label: "Enregistrements MX",
         status: "pass",
-        detail: `${mxRecords.length} serveur(s) MX trouve(s) pour "${domain}". ${matchedProvider ? `Fournisseur detecte : ${matchedProvider}.` : `MX primaire : ${mxRecords[0].exchange}`}`,
+        detail: `${mxRecords.length} serveur(s) MX trouvé(s) pour "${domain}". ${matchedProvider ? `Fournisseur détecté : ${matchedProvider}.` : `MX primaire : ${mxRecords[0].exchange}`}`,
         priority: 5,
       });
     }
@@ -606,8 +606,8 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
   checks.push({
     label: "Email jetable",
     status: isDisposable ? "fail" : "pass",
-    detail: isDisposable ? `"${domain}" est un service d'email jetable/temporaire. Ces adresses sont creees pour un usage unique et sont tres utilisees dans les arnaques.` : "Ce n'est pas un domaine d'email jetable connu.",
-    fix: isDisposable ? "N'interagissez JAMAIS avec des emails provenant de services jetables. Ils sont utilises pour masquer l'identite de l'expediteur." : undefined,
+    detail: isDisposable ? `"${domain}" est un service d'email jetable/temporaire. Ces adresses sont créées pour un usage unique et sont très utilisées dans les arnaques.` : "Ce n'est pas un domaine d'email jetable connu.",
+    fix: isDisposable ? "N'interagissez JAMAIS avec des emails provenant de services jetables. Ils sont utilisés pour masquer l'identité de l'expéditeur." : undefined,
     priority: 4,
   });
   if (isDisposable) riskPoints += 30;
@@ -618,7 +618,7 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
     label: "Fournisseur reconnu",
     status: isReputable ? "pass" : "warn",
     detail: isReputable ? `"${domain}" est un fournisseur d'email reconnu et fiable.` : `"${domain}" n'est pas un fournisseur grand public. Soyez vigilant.`,
-    fix: isReputable ? undefined : "Verifiez l'identite de l'expediteur par un autre canal avant de faire confiance.",
+    fix: isReputable ? undefined : "Vérifiez l'identité de l'expéditeur par un autre canal avant de faire confiance.",
     priority: 6,
   });
   if (!isReputable && !isDisposable) riskPoints += 10;
@@ -629,8 +629,8 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
   checks.push({
     label: "Extension de domaine (TLD)",
     status: hasSuspiciousTLD ? "warn" : "pass",
-    detail: hasSuspiciousTLD ? "Extension souvent associee au spam/phishing." : "Extension de domaine standard.",
-    fix: hasSuspiciousTLD ? "Les domaines en .xyz, .tk, .ml etc. sont gratuits et abuses par les spammeurs." : undefined,
+    detail: hasSuspiciousTLD ? "Extension souvent associée au spam/phishing." : "Extension de domaine standard.",
+    fix: hasSuspiciousTLD ? "Les domaines en .xyz, .tk, .ml etc. sont gratuits et abusés par les spammeurs." : undefined,
     priority: 7,
   });
   if (hasSuspiciousTLD) riskPoints += 15;
@@ -642,7 +642,7 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
     checks.push({
       label: "Typosquatting",
       status: "fail",
-      detail: "Ce domaine imite un domaine legitime avec une faute de frappe. Technique de phishing classique !",
+      detail: "Ce domaine imite un domaine légitime avec une faute de frappe. Technique de phishing classique !",
       fix: "C'est du PHISHING ! Le domaine imite un service connu. Ne cliquez sur aucun lien. Signalez et supprimez.",
       priority: 3,
     });
@@ -655,8 +655,8 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
     checks.push({
       label: "Homoglyphes dans le domaine",
       status: "fail",
-      detail: `${domainHomoglyphs.length} caractere(s) homoglyphe(s) detecte(s) dans le domaine. Ces caracteres ressemblent a des lettres latines mais proviennent d'un autre alphabet (cyrillique, etc.). Technique avancee d'usurpation.`,
-      fix: "PHISHING AVANCE ! Le domaine utilise des caracteres Unicode qui imitent des lettres latines. L'adresse semble identique mais est en realite completement differente.",
+      detail: `${domainHomoglyphs.length} caractère(s) homoglyphe(s) détecté(s) dans le domaine. Ces caractères ressemblent à des lettres latines mais proviennent d'un autre alphabet (cyrillique, etc.). Technique avancée d'usurpation.`,
+      fix: "PHISHING AVANCÉ ! Le domaine utilise des caractères Unicode qui imitent des lettres latines. L'adresse semble identique mais est en réalité complètement différente.",
       priority: 3,
     });
     riskPoints += 40;
@@ -670,13 +670,13 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
       checks.push({
         label: "Fautes d'orthographe",
         status: spellingErrors.length > 2 ? "fail" : "warn",
-        detail: `${spellingErrors.length} faute(s) detectee(s). Les emails de phishing contiennent souvent des erreurs volontaires pour contourner les filtres anti-spam.`,
-        fix: "Les entreprises legitimes envoient des emails relus et corriges. De nombreuses fautes = signal d'alerte majeur.",
+        detail: `${spellingErrors.length} faute(s) détectée(s). Les emails de phishing contiennent souvent des erreurs volontaires pour contourner les filtres anti-spam.`,
+        fix: "Les entreprises légitimes envoient des emails relus et corrigés. De nombreuses fautes = signal d'alerte majeur.",
         priority: 5,
       });
       riskPoints += spellingErrors.length > 2 ? 20 : 8;
     } else if (content.trim().length > 20) {
-      checks.push({ label: "Fautes d'orthographe", status: "pass", detail: "Aucune faute suspecte detectee.", priority: 5 });
+      checks.push({ label: "Fautes d'orthographe", status: "pass", detail: "Aucune faute suspecte détectée.", priority: 5 });
     }
   }
 
@@ -685,10 +685,10 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
     const genericGreeting = /cher\s*(client|utilisateur|membre|monsieur|madame)|bonjour\s*,\s*$/im.test(content);
     if (genericGreeting) {
       checks.push({
-        label: "Formule generique",
+        label: "Formule générique",
         status: "warn",
-        detail: "L'email utilise une formule d'adresse generique au lieu de votre nom. Les vrais services connaissent votre identite.",
-        fix: "Un service chez lequel vous avez un compte s'adressera toujours a vous par votre nom et prenom.",
+        detail: "L'email utilise une formule d'adresse générique au lieu de votre nom. Les vrais services connaissent votre identité.",
+        fix: "Un service chez lequel vous avez un compte s'adressera toujours à vous par votre nom et prénom.",
         priority: 4,
       });
       riskPoints += 8;
@@ -703,9 +703,9 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
       const brandInDomain = mentionedBrands.some(b => domain.includes(b));
       if (!brandInDomain && !isReputable) {
         checks.push({
-          label: "Usurpation d'identite possible",
+          label: "Usurpation d'identité possible",
           status: "fail",
-          detail: `Le mail mentionne "${mentionedBrands.join('", "')}" mais l'expediteur ("${domain}") n'est pas le domaine officiel de ces services.`,
+          detail: `Le mail mentionne "${mentionedBrands.join('", "')}" mais l'expéditeur ("${domain}") n'est pas le domaine officiel de ces services.`,
           fix: `Un email officiel de ${mentionedBrands[0]} viendrait d'un domaine @${mentionedBrands[0]}.com/.fr. Allez sur le site officiel directement.`,
           priority: 2,
         });
@@ -721,8 +721,8 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
       checks.push({
         label: "Homoglyphes dans le contenu",
         status: "warn",
-        detail: `${contentHomoglyphs.length} caractere(s) homoglyphe(s) detecte(s) dans le corps du message. Technique utilisee pour contourner les filtres anti-phishing.`,
-        fix: "Le contenu utilise des caracteres qui ressemblent a des lettres latines mais proviennent d'un autre alphabet. C'est suspect.",
+        detail: `${contentHomoglyphs.length} caractère(s) homoglyphe(s) détecté(s) dans le corps du message. Technique utilisée pour contourner les filtres anti-phishing.`,
+        fix: "Le contenu utilise des caractères qui ressemblent à des lettres latines mais proviennent d'un autre alphabet. C'est suspect.",
         priority: 5,
       });
       riskPoints += 10;
@@ -740,7 +740,7 @@ function analyzeEmail(email: string, content: string, mxRecords: MXRecord[] | nu
 
   const riskScore = Math.min(100, riskPoints);
   let riskLabel = "Faible risque";
-  if (riskScore >= 60) riskLabel = "Risque eleve";
+  if (riskScore >= 60) riskLabel = "Risque élevé";
   else if (riskScore >= 30) riskLabel = "Risque moyen";
 
   return { email, isValid: isValidFormat, checks, riskScore, riskLabel, detectedLinks, spellingErrors, domainInfo, mxRecords };
@@ -814,7 +814,7 @@ export function EmailChecker() {
             else if (gemini.verdict === "suspicious") bonus = 10;
             const newScore = Math.min(100, prev.riskScore + bonus);
             let newLabel = "Faible risque";
-            if (newScore >= 60) newLabel = "Risque eleve";
+            if (newScore >= 60) newLabel = "Risque élevé";
             else if (newScore >= 30) newLabel = "Risque moyen";
             return { ...prev, riskScore: newScore, riskLabel: newLabel };
           });
@@ -842,7 +842,7 @@ export function EmailChecker() {
     switch (v) {
       case "dangerous": return "DANGEREUX";
       case "suspicious": return "SUSPECT";
-      default: return "PROBABLEMENT SUR";
+      default: return "PROBABLEMENT SÛR";
     }
   };
 
@@ -859,12 +859,12 @@ export function EmailChecker() {
             </span>
           </div>
           <h1 style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.8rem, 3vw, 2.2rem)" }} className="text-[#e2e8f0] mb-4">
-            Verificateur d'{" "}
+            Vérificateur d'{" "}
             <span style={{ background: "linear-gradient(135deg, #06b6d4, #00d4ff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Email</span>
           </h1>
           <p className="text-[#94a3b8] max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
-            Analyse complete : validite syntaxique, structure du domaine, verification MX reelle via dns.google,
-            detection de domaines jetables, typosquatting, homoglyphes{hasGeminiKey ? " et analyse avancee par Gemini AI" : ""}.
+            Analyse complète : validité syntaxique, structure du domaine, vérification MX réelle via dns.google,
+            détection de domaines jetables, typosquatting, homoglyphes{hasGeminiKey ? " et analyse avancée par Gemini AI" : ""}.
           </p>
         </motion.div>
 
@@ -881,7 +881,7 @@ export function EmailChecker() {
         <div className="bg-[#111827] border border-[#06b6d4]/20 rounded-xl p-6 mb-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-[#94a3b8] mb-1.5" style={{ fontSize: "0.85rem" }}>Adresse email de l'expediteur</label>
+              <label className="block text-[#94a3b8] mb-1.5" style={{ fontSize: "0.85rem" }}>Adresse email de l'expéditeur</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
                 <input
@@ -897,18 +897,18 @@ export function EmailChecker() {
 
             <div>
               <label className="block text-[#94a3b8] mb-1.5" style={{ fontSize: "0.85rem" }}>
-                Contenu complet du mail <span className="text-[#06b6d4]">(recommande)</span>
+                Contenu complet du mail <span className="text-[#06b6d4]">(recommandé)</span>
               </label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Collez ici l'INTEGRALITE du mail suspect (objet + corps + liens). Plus le contenu est complet, plus l'analyse sera precise..."
+                placeholder="Collez ici l'INTÉGRALITÉ du mail suspect (objet + corps + liens). Plus le contenu est complet, plus l'analyse sera précise..."
                 rows={6}
                 className="w-full px-4 py-3 bg-[#0a0a0f] border border-[#06b6d4]/20 rounded-lg text-[#e2e8f0] placeholder-[#64748b] focus:outline-none focus:border-[#06b6d4]/60 resize-none"
                 style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.85rem" }}
               />
               <p className="text-[#64748b] mt-1" style={{ fontSize: "0.75rem" }}>
-                Analyse heuristique + MX reel + homoglyphes + typosquatting.{hasGeminiKey ? " Analyse IA Gemini incluse." : ""}
+                Analyse heuristique + MX réel + homoglyphes + typosquatting.{hasGeminiKey ? " Analyse IA Gemini incluse." : ""}
               </p>
             </div>
 
@@ -1034,7 +1034,7 @@ export function EmailChecker() {
                                 {mx.exchange}
                               </span>
                             </div>
-                            <span className="text-[#64748b]" style={{ fontSize: "0.68rem" }}>priorite</span>
+                            <span className="text-[#64748b]" style={{ fontSize: "0.68rem" }}>priorité</span>
                           </div>
                         ))}
                       </div>
@@ -1058,7 +1058,7 @@ export function EmailChecker() {
                   </div>
                   <div className="flex-1">
                     <p className="text-[#e2e8f0]" style={{ fontSize: "0.9rem", fontFamily: "Orbitron, sans-serif" }}>Analyse IA — Gemini 2.0 Flash</p>
-                    <p className="text-[#64748b]" style={{ fontSize: "0.7rem" }}>Analyse forensique avancee par intelligence artificielle</p>
+                    <p className="text-[#64748b]" style={{ fontSize: "0.7rem" }}>Analyse forensique avancée par intelligence artificielle</p>
                   </div>
                   {result.gemini && (
                     <span
@@ -1137,7 +1137,7 @@ export function EmailChecker() {
                     {/* Tactics */}
                     {result.gemini.tactics.length > 0 && (
                       <div className="bg-[#0a0a0f] rounded-lg p-3" style={{ border: "1px solid rgba(239,68,68,0.1)" }}>
-                        <p className="text-[#ef4444] mb-2" style={{ fontSize: "0.75rem", fontFamily: "Orbitron, sans-serif" }}>Tactiques de manipulation detectees</p>
+                        <p className="text-[#ef4444] mb-2" style={{ fontSize: "0.75rem", fontFamily: "Orbitron, sans-serif" }}>Tactiques de manipulation détectées</p>
                         <div className="flex flex-wrap gap-2">
                           {result.gemini.tactics.map((t, i) => (
                             <span key={i} className="px-2 py-1 rounded-full bg-[#ef4444]/10 text-[#ef4444]" style={{ fontSize: "0.72rem" }}>{t}</span>
@@ -1149,7 +1149,7 @@ export function EmailChecker() {
                     {/* Header Red Flags */}
                     {result.gemini.header_red_flags.length > 0 && (
                       <div className="bg-[#0a0a0f] rounded-lg p-3" style={{ border: "1px solid rgba(245,158,11,0.1)" }}>
-                        <p className="text-[#f59e0b] mb-2" style={{ fontSize: "0.75rem", fontFamily: "Orbitron, sans-serif" }}>Indicateurs suspects (headers/metadonnees)</p>
+                        <p className="text-[#f59e0b] mb-2" style={{ fontSize: "0.75rem", fontFamily: "Orbitron, sans-serif" }}>Indicateurs suspects (headers/métadonnées)</p>
                         <div className="space-y-1">
                           {result.gemini.header_red_flags.map((f, i) => (
                             <div key={i} className="flex items-start gap-2">
@@ -1165,7 +1165,7 @@ export function EmailChecker() {
                     {result.gemini.recommended_action && (
                       <div className="bg-[#0a0a0f] rounded-lg p-3 border-l-2" style={{ borderColor: getVerdictStyle(result.gemini.verdict).color }}>
                         <p className="text-[#e2e8f0]" style={{ fontSize: "0.8rem" }}>
-                          <span style={{ color: getVerdictStyle(result.gemini.verdict).color }}>Action recommandee : </span>
+                          <span style={{ color: getVerdictStyle(result.gemini.verdict).color }}>Action recommandée : </span>
                           {result.gemini.recommended_action}
                         </p>
                       </div>
@@ -1206,7 +1206,7 @@ export function EmailChecker() {
                       {check.fix && (
                         <div className="mt-2 bg-[#0a0a0f] rounded-lg p-3 border-l-2" style={{ borderColor: check.status === "fail" ? "#ef4444" : "#f59e0b" }}>
                           <p className="text-[#e2e8f0]" style={{ fontSize: "0.8rem" }}>
-                            <span style={{ color: check.status === "fail" ? "#ef4444" : "#f59e0b" }}>Comment reagir : </span>
+                            <span style={{ color: check.status === "fail" ? "#ef4444" : "#f59e0b" }}>Comment réagir : </span>
                             {check.fix}
                           </p>
                         </div>
@@ -1227,7 +1227,7 @@ export function EmailChecker() {
                   <div className="flex items-center gap-2">
                     <Link2 className="w-5 h-5 text-[#8b5cf6]" />
                     <span className="text-[#e2e8f0]" style={{ fontSize: "0.9rem" }}>
-                      Liens detectes ({result.detectedLinks.length})
+                      Liens détectés ({result.detectedLinks.length})
                     </span>
                     {result.detectedLinks.some(l => !l.safe) && (
                       <span className="px-2 py-0.5 rounded-full bg-[#ef4444]/10 text-[#ef4444]" style={{ fontSize: "0.65rem" }}>
@@ -1313,16 +1313,16 @@ export function EmailChecker() {
               <div className="bg-gradient-to-br from-[#111827] to-[#0f172a] border border-[#ef4444]/20 rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Shield className="w-5 h-5 text-[#ef4444]" />
-                  <h3 className="text-[#ef4444]" style={{ fontFamily: "Orbitron, sans-serif", fontSize: "0.95rem" }}>Actions recommandees</h3>
+                  <h3 className="text-[#ef4444]" style={{ fontFamily: "Orbitron, sans-serif", fontSize: "0.95rem" }}>Actions recommandées</h3>
                 </div>
                 <ul className="space-y-2">
                   {[
-                    "Ne cliquez sur AUCUN lien present dans l'email",
-                    "Ne telechargez aucune piece jointe",
-                    "Ne repondez pas et ne fournissez aucune information personnelle",
+                    "Ne cliquez sur AUCUN lien présent dans l'email",
+                    "Ne téléchargez aucune pièce jointe",
+                    "Ne répondez pas et ne fournissez aucune information personnelle",
                     "Signalez l'email comme spam/phishing dans votre messagerie",
-                    "Si vous avez deja clique, changez immediatement vos mots de passe",
-                    "Contactez le service concerne via son site OFFICIEL (pas via l'email)",
+                    "Si vous avez déjà cliqué, changez immédiatement vos mots de passe",
+                    "Contactez le service concerné via son site OFFICIEL (pas via l'email)",
                   ].map((action, i) => (
                     <li key={i} className="flex items-start gap-2">
                       <span className="text-[#ef4444] mt-1" style={{ fontSize: "0.8rem" }}>●</span>

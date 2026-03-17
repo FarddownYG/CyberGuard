@@ -90,9 +90,9 @@ export function getQuota(): QuotaInfo {
   if (minuteUsed >= minuteMax) {
     blockedReason = "Limite par minute atteinte (4/min). Attendez quelques secondes.";
   } else if (dayUsed >= dayMax) {
-    blockedReason = "Limite journaliere atteinte (500/jour). Reessayez demain.";
+    blockedReason = "Limite journalière atteinte (500/jour). Réessayez demain.";
   } else if (monthUsed >= monthMax) {
-    blockedReason = "Limite mensuelle atteinte (15 500/mois). Reessayez le mois prochain.";
+    blockedReason = "Limite mensuelle atteinte (15 500/mois). Réessayez le mois prochain.";
   }
 
   // Calculate next available slot

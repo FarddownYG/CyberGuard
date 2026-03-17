@@ -24,13 +24,13 @@ async function pingService(url: string): Promise<number> {
 export function StatusPage() {
   // Real services: only things that actually exist on this site
   const [services, setServices] = useState<ServiceStatus[]>([
-    { name: "Site Web (Frontend)", status: "operational", description: "Application React hebergee sur Vercel", icon: Globe, lastCheck: "" },
+    { name: "Site Web (Frontend)", status: "operational", description: "Application React hébergée sur Vercel", icon: Globe, lastCheck: "" },
     { name: "Analyse VirusTotal", status: "operational", description: "Proxy API v3 via Vercel rewrites", icon: Eye, lastCheck: "" },
     { name: "Analyseur de Fichiers", status: "operational", description: "Hash local + lookup VirusTotal", icon: FileSearch, lastCheck: "" },
     { name: "Email Checker", status: "operational", description: "Analyse locale anti-phishing", icon: Mail, lastCheck: "" },
-    { name: "Generateur de Mots de Passe", status: "operational", description: "Web Crypto API (100% local)", icon: Key, lastCheck: "" },
+    { name: "Générateur de Mots de Passe", status: "operational", description: "Web Crypto API (100% local)", icon: Key, lastCheck: "" },
     { name: "DNS Security Check", status: "operational", description: "DNS-over-HTTPS via Google/Cloudflare", icon: Shield, lastCheck: "" },
-    { name: "SSL Checker", status: "operational", description: "Page vitrine (lien externe a venir)", icon: Lock, lastCheck: "" },
+    { name: "SSL Checker", status: "operational", description: "Page vitrine (lien externe à venir)", icon: Lock, lastCheck: "" },
   ]);
 
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString("fr-FR"));
@@ -83,7 +83,7 @@ export function StatusPage() {
         else if (s.name === "Analyse VirusTotal") status = vtStatus;
         else if (s.name === "Analyseur de Fichiers") status = vtStatus; // depends on VT
         else if (s.name === "DNS Security Check") status = dnsStatus;
-        else if (s.name === "Generateur de Mots de Passe") status = hibpStatus === "down" ? "degraded" : "operational";
+        else if (s.name === "Générateur de Mots de Passe") status = hibpStatus === "down" ? "degraded" : "operational";
         // Email Checker & SSL Checker are 100% local
         return { ...s, status, lastCheck: now };
       })
@@ -111,8 +111,8 @@ export function StatusPage() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "operational": return "Operationnel";
-      case "degraded": return "Degrade";
+      case "operational": return "Opérationnel";
+      case "degraded": return "Dégradé";
       default: return "Hors service";
     }
   };
@@ -137,7 +137,7 @@ export function StatusPage() {
             Statut des{" "}
             <span style={{ background: "linear-gradient(135deg, #39ff14, #00d4ff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Services</span>
           </h1>
-          <p className="text-[#94a3b8]">Etat en temps reel des services CyberGuard</p>
+          <p className="text-[#94a3b8]">État en temps réel des services CyberGuard</p>
         </motion.div>
 
         {/* Overall status */}
@@ -154,26 +154,26 @@ export function StatusPage() {
           <div className="flex items-center justify-center gap-3 mb-2">
             {allOperational ? <CheckCircle className="w-7 h-7 text-[#39ff14]" /> : <AlertTriangle className="w-7 h-7 text-[#f59e0b]" />}
             <span style={{ fontFamily: "Orbitron, sans-serif", fontSize: "1.1rem", color: allOperational ? "#39ff14" : "#f59e0b" }}>
-              {allOperational ? "Tous les systemes sont operationnels" : "Certains services sont degrades"}
+              {allOperational ? "Tous les systèmes sont opérationnels" : "Certains services sont dégradés"}
             </span>
           </div>
           <p className="text-[#4a5568]" style={{ fontSize: "0.75rem", fontFamily: "JetBrains Mono, monospace" }}>
-            Derniere verification : {lastUpdated} | Auto-refresh 30s
-            {checking && " | Verification en cours..."}
+            Dernière vérification : {lastUpdated} | Auto-refresh 30s
+            {checking && " | Vérification en cours..."}
           </p>
         </motion.div>
 
         {/* 90-day uptime — no historical data available */}
         <div className="rounded-xl p-6 mb-6" style={{ background: "rgba(17,24,39,0.5)", border: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[#e2e8f0]" style={{ fontSize: "0.95rem" }}>Historique de disponibilite</h3>
+            <h3 className="text-[#e2e8f0]" style={{ fontSize: "0.95rem" }}>Historique de disponibilité</h3>
           </div>
           <div className="text-center py-4">
             <p className="text-[#64748b]" style={{ fontSize: "0.8rem" }}>
-              Aucun historique de disponibilite enregistre. Les verifications ci-dessous sont effectuees en temps reel a chaque visite de cette page.
+              Aucun historique de disponibilité enregistré. Les vérifications ci-dessous sont effectuées en temps réel à chaque visite de cette page.
             </p>
             <p className="text-[#4a5568] mt-2" style={{ fontSize: "0.7rem", fontFamily: "JetBrains Mono, monospace" }}>
-              Un systeme de monitoring 24/7 avec historique n'est pas encore en place.
+              Un système de monitoring 24/7 avec historique n'est pas encore en place.
             </p>
           </div>
         </div>
@@ -225,10 +225,10 @@ export function StatusPage() {
           <div className="text-center py-8">
             <Activity className="w-10 h-10 text-[#64748b]/40 mx-auto mb-3" />
             <p className="text-[#64748b]" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.85rem" }}>
-              Pas de systeme de suivi d'incidents
+              Pas de système de suivi d'incidents
             </p>
             <p className="text-[#4a5568] mt-1" style={{ fontSize: "0.75rem" }}>
-              Les incidents ne sont pas encore traces automatiquement. Les verifications sont effectuees a chaque chargement de cette page.
+              Les incidents ne sont pas encore tracés automatiquement. Les vérifications sont effectuées à chaque chargement de cette page.
             </p>
           </div>
         </div>

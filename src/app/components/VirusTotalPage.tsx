@@ -29,7 +29,7 @@ export function VirusTotalPage() {
     setPhase("submitting");
     setResults(null);
     setErrorMsg("");
-    setStatusMsg("Soumission de l'URL a VirusTotal...");
+    setStatusMsg("Soumission de l'URL à VirusTotal...");
 
     try {
       // Step 1: Submit URL
@@ -46,7 +46,7 @@ export function VirusTotalPage() {
 
       // Step 3: Fetch full URL report
       setPhase("fetching");
-      setStatusMsg("Recuperation du rapport complet...");
+      setStatusMsg("Récupération du rapport complet...");
 
       const report = await getUrlReport(url.trim());
       const parsed = parseUrlResults(report);
@@ -57,10 +57,10 @@ export function VirusTotalPage() {
       if (err instanceof VTError) {
         setErrorMsg(err.message);
         if (err.code === "NotFoundError" || err.code === "HTTP_404") {
-          setErrorMsg("URL non trouvee dans la base VirusTotal. Elle est peut-etre en cours d'analyse. Reessayez dans quelques instants.");
+          setErrorMsg("URL non trouvée dans la base VirusTotal. Elle est peut-être en cours d'analyse. Réessayez dans quelques instants.");
         }
       } else {
-        setErrorMsg("Erreur inattendue. Verifiez votre connexion et la configuration de l'API key.");
+        setErrorMsg("Erreur inattendue. Vérifiez votre connexion et la configuration de l'API key.");
       }
       setPhase("error");
     }
@@ -83,7 +83,7 @@ export function VirusTotalPage() {
       case "harmless": return "Sain";
       case "malicious": return "Malveillant";
       case "suspicious": return "Suspect";
-      case "undetected": return "Non evalue";
+      case "undetected": return "Non évalué";
       case "timeout": return "Timeout";
       default: return cat;
     }
@@ -102,7 +102,7 @@ export function VirusTotalPage() {
             <span style={{ background: "linear-gradient(135deg, #8b5cf6, #00d4ff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>VirusTotal</span>
           </h1>
           <p className="text-[#94a3b8] max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
-            Verifiez si une URL est malveillante en l'analysant avec plus de 70 moteurs antivirus via l'API VirusTotal v3.
+            Vérifiez si une URL est malveillante en l'analysant avec plus de 70 moteurs antivirus via l'API VirusTotal v3.
           </p>
         </motion.div>
 
@@ -112,13 +112,13 @@ export function VirusTotalPage() {
             <div className="flex items-center gap-2 mb-2">
               <div className={`w-2 h-2 rounded-full ${apiKey ? "bg-[#39ff14]" : "bg-[#ef4444]"} animate-pulse`} />
               <span className="text-[#e2e8f0]" style={{ fontSize: "0.85rem", fontFamily: "JetBrains Mono, monospace" }}>
-                {apiKey ? "API connectee" : "API non configuree"}
+                {apiKey ? "API connectée" : "API non configurée"}
               </span>
             </div>
             <p className="text-[#64748b]" style={{ fontSize: "0.72rem" }}>
               {apiKey
-                ? "Cle VirusTotal chargee depuis les variables d'environnement Vercel."
-                : "Ajoutez VITE_VIRUSTOTAL_API_KEY dans vos variables d'environnement Vercel pour activer les scans reels."}
+                ? "Clé VirusTotal chargée depuis les variables d'environnement Vercel."
+                : "Ajoutez VITE_VIRUSTOTAL_API_KEY dans vos variables d'environnement Vercel pour activer les scans réels."}
             </p>
           </div>
           <QuotaDisplay />
@@ -219,7 +219,7 @@ export function VirusTotalPage() {
                 { label: "Sains", value: results.stats.harmless, color: "#39ff14" },
                 { label: "Malveillants", value: results.stats.malicious, color: "#ef4444" },
                 { label: "Suspects", value: results.stats.suspicious, color: "#f59e0b" },
-                { label: "Non evalues", value: results.stats.undetected, color: "#64748b" },
+                { label: "Non évalués", value: results.stats.undetected, color: "#64748b" },
               ].map((s) => (
                 <div key={s.label} className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl p-4 text-center">
                   <div style={{ fontFamily: "Orbitron, sans-serif", fontSize: "2rem", color: s.color }}>
@@ -237,7 +237,7 @@ export function VirusTotalPage() {
                 <span className="text-[#00d4ff] font-mono" style={{ fontSize: "0.8rem" }}>{results.url}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[#64748b]" style={{ fontSize: "0.75rem" }}>Scanne:</span>
+                <span className="text-[#64748b]" style={{ fontSize: "0.75rem" }}>Scanné :</span>
                 <span className="text-[#e2e8f0]" style={{ fontSize: "0.8rem" }}>{results.scanDate}</span>
               </div>
               <a
@@ -254,7 +254,7 @@ export function VirusTotalPage() {
 
             {/* Reputation bar */}
             <div className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl p-6 mb-8">
-              <p className="text-[#94a3b8] mb-3" style={{ fontSize: "0.85rem" }}>Score de reputation</p>
+              <p className="text-[#94a3b8] mb-3" style={{ fontSize: "0.85rem" }}>Score de réputation</p>
               <div className="w-full h-4 bg-[#1e293b] rounded-full overflow-hidden">
                 <motion.div
                   className="h-full rounded-full"
@@ -277,7 +277,7 @@ export function VirusTotalPage() {
             {/* Engine details */}
             <div className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl overflow-hidden">
               <div className="p-4 border-b border-[#00d4ff]/10 flex items-center justify-between">
-                <h3 className="text-[#e2e8f0]">Details par moteur antivirus</h3>
+                <h3 className="text-[#e2e8f0]">Détails par moteur antivirus</h3>
                 <span className="text-[#64748b]" style={{ fontSize: "0.75rem", fontFamily: "JetBrains Mono, monospace" }}>
                   {totalEngines} moteurs
                 </span>

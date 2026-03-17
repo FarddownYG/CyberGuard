@@ -94,7 +94,7 @@ async function checkA(domain: string): Promise<{ check: DNSCheck; records: strin
         name: "Enregistrements A (IPv4)",
         status: "pass",
         value: records.join(", "),
-        detail: `${records.length} adresse(s) IPv4 trouvee(s). Le domaine resout correctement.`,
+        detail: `${records.length} adresse(s) IPv4 trouvée(s). Le domaine résout correctement.`,
       },
       records,
     };
@@ -105,7 +105,7 @@ async function checkA(domain: string): Promise<{ check: DNSCheck; records: strin
       name: "Enregistrements A (IPv4)",
       status: "warn",
       value: "Aucun enregistrement A",
-      detail: "Aucune adresse IPv4 trouvee. Le domaine ne resout peut-etre que via IPv6 (AAAA) ou CNAME.",
+      detail: "Aucune adresse IPv4 trouvée. Le domaine ne résout peut-être que via IPv6 (AAAA) ou CNAME.",
     },
     records: [],
   };
@@ -122,8 +122,8 @@ async function checkAAAA(domain: string): Promise<{ check: DNSCheck; records: st
       status: records.length > 0 ? "pass" : "info",
       value: records.length > 0 ? records.join(", ") : "Aucun enregistrement AAAA",
       detail: records.length > 0
-        ? `${records.length} adresse(s) IPv6 trouvee(s). Le domaine supporte le dual-stack IPv4/IPv6.`
-        : "Pas d'IPv6 configure. Non bloquant mais recommande pour la compatibilite future.",
+        ? `${records.length} adresse(s) IPv6 trouvée(s). Le domaine supporte le dual-stack IPv4/IPv6.`
+        : "Pas d'IPv6 configuré. Non bloquant mais recommandé pour la compatibilité future.",
     },
     records,
   };
@@ -141,9 +141,9 @@ async function checkNS(domain: string): Promise<{ check: DNSCheck; records: stri
         status: records.length >= 2 ? "pass" : "warn",
         value: records.join(", "),
         detail: records.length >= 2
-          ? `${records.length} serveurs NS detectes. Redondance DNS adequate.`
-          : `Un seul serveur NS detecte. Ajoutez un serveur secondaire pour la redondance.`,
-        fix: records.length < 2 ? "Un seul serveur DNS est un point de defaillance unique (SPOF). Configurez au moins 2 serveurs NS chez votre registrar." : undefined,
+          ? `${records.length} serveurs NS détectés. Redondance DNS adéquate.`
+          : `Un seul serveur NS détecté. Ajoutez un serveur secondaire pour la redondance.`,
+        fix: records.length < 2 ? "Un seul serveur DNS est un point de défaillance unique (SPOF). Configurez au moins 2 serveurs NS chez votre registrar." : undefined,
       },
       records,
     };
@@ -154,7 +154,7 @@ async function checkNS(domain: string): Promise<{ check: DNSCheck; records: stri
       name: "Serveurs de noms (NS)",
       status: "info",
       value: "Pas d'enregistrements NS directs",
-      detail: "Aucun enregistrement NS trouve a ce niveau. Si c'est un sous-domaine, les NS sont geres par le domaine parent.",
+      detail: "Aucun enregistrement NS trouvé à ce niveau. Si c'est un sous-domaine, les NS sont gérés par le domaine parent.",
     },
     records: [],
   };
@@ -177,10 +177,10 @@ async function checkSPF(domain: string): Promise<DNSCheck> {
       status: hasStrictAll ? "pass" : hasSoftAll ? "pass" : "warn",
       value: spfRecord,
       detail: hasStrictAll
-        ? "SPF strict (-all) detecte. Seuls les serveurs declares peuvent envoyer des emails pour ce domaine."
+        ? "SPF strict (-all) détecté. Seuls les serveurs déclarés peuvent envoyer des emails pour ce domaine."
         : hasSoftAll
-          ? "SPF avec soft fail (~all) detecte. Les serveurs non autorises sont signales mais pas rejetes."
-          : "SPF detecte mais sans politique stricte. Ajoutez '-all' ou '~all' a la fin.",
+          ? "SPF avec soft fail (~all) détecté. Les serveurs non autorisés sont signalés mais pas rejetés."
+          : "SPF détecté mais sans politique stricte. Ajoutez '-all' ou '~all' à la fin.",
       fix: !hasStrictAll && !hasSoftAll ? "Modifiez votre enregistrement SPF pour terminer par '-all' (strict) ou '~all' (soft fail)." : undefined,
     };
   }
@@ -188,9 +188,9 @@ async function checkSPF(domain: string): Promise<DNSCheck> {
   return {
     name: "SPF (Sender Policy Framework)",
     status: "fail",
-    value: "Aucun enregistrement SPF detecte",
-    detail: "Aucun enregistrement SPF. Les emails de ce domaine pourraient etre usurpes (spoofing).",
-    fix: "Ajoutez un enregistrement DNS TXT commencant par 'v=spf1' pour declarer les serveurs autorises a envoyer des emails.",
+    value: "Aucun enregistrement SPF détecté",
+    detail: "Aucun enregistrement SPF. Les emails de ce domaine pourraient être usurpés (spoofing).",
+    fix: "Ajoutez un enregistrement DNS TXT commençant par 'v=spf1' pour déclarer les serveurs autorisés à envoyer des emails.",
   };
 }
 
@@ -212,7 +212,7 @@ async function checkDMARC(domain: string): Promise<DNSCheck> {
         name: "DMARC (Domain-based Message Authentication)",
         status: "pass",
         value: dmarcRecord,
-        detail: "Politique DMARC stricte (reject). Les emails non authentifies sont rejetes.",
+        detail: "Politique DMARC stricte (reject). Les emails non authentifiés sont rejetés.",
       };
     } else if (policyValue === "quarantine") {
       return {
@@ -226,8 +226,8 @@ async function checkDMARC(domain: string): Promise<DNSCheck> {
         name: "DMARC (Domain-based Message Authentication)",
         status: "warn",
         value: dmarcRecord,
-        detail: "DMARC en mode 'none' (monitoring uniquement). Les emails non authentifies passent quand meme.",
-        fix: "Passez progressivement de p=none a p=quarantine puis p=reject une fois que vos flux email sont valides.",
+        detail: "DMARC en mode 'none' (monitoring uniquement). Les emails non authentifiés passent quand même.",
+        fix: "Passez progressivement de p=none à p=quarantine puis p=reject une fois que vos flux email sont validés.",
       };
     }
   }
@@ -235,8 +235,8 @@ async function checkDMARC(domain: string): Promise<DNSCheck> {
   return {
     name: "DMARC (Domain-based Message Authentication)",
     status: "fail",
-    value: "Aucune politique DMARC detectee",
-    detail: `Aucun enregistrement DMARC sur _dmarc.${domain}. Le domaine est vulnerable au spoofing.`,
+    value: "Aucune politique DMARC détectée",
+    detail: `Aucun enregistrement DMARC sur _dmarc.${domain}. Le domaine est vulnérable au spoofing.`,
     fix: "Ajoutez un enregistrement TXT sur _dmarc.votre-domaine.com avec la valeur 'v=DMARC1; p=none; rua=mailto:dmarc@votre-domaine.com' pour commencer le monitoring.",
   };
 }
@@ -262,16 +262,16 @@ async function checkDKIM(domain: string): Promise<DNSCheck> {
     return {
       name: "DKIM (DomainKeys Identified Mail)",
       status: "pass",
-      value: `DKIM actif (selecteur: ${found[0]})`,
-      detail: `Enregistrement DKIM detecte via le selecteur '${found[0]}'. L'authenticite des emails sortants est verifiable cryptographiquement.`,
+      value: `DKIM actif (sélecteur: ${found[0]})`,
+      detail: `Enregistrement DKIM détecté via le sélecteur '${found[0]}'. L'authenticité des emails sortants est vérifiable cryptographiquement.`,
     };
   }
 
   return {
     name: "DKIM (DomainKeys Identified Mail)",
     status: "info",
-    value: "Aucun DKIM detecte (selecteurs standards)",
-    detail: `Teste avec ${selectors.length} selecteurs (${selectors.slice(0, 5).join(", ")}...). Le DKIM peut utiliser un selecteur personnalise non testable depuis l'exterieur.`,
+    value: "Aucun DKIM détecté (sélecteurs standards)",
+    detail: `Testé avec ${selectors.length} sélecteurs (${selectors.slice(0, 5).join(", ")}...). Le DKIM peut utiliser un sélecteur personnalisé non testable depuis l'extérieur.`,
   };
 }
 
@@ -282,8 +282,8 @@ async function checkDNSSEC(domain: string): Promise<DNSCheck> {
     return {
       name: "DNSSEC",
       status: "pass",
-      value: "DNSSEC active et valide (AD flag)",
-      detail: "DNSSEC est active. Les reponses DNS sont signees et protegees contre le DNS spoofing et le cache poisoning.",
+      value: "DNSSEC activé et validé (AD flag)",
+      detail: "DNSSEC est activé. Les réponses DNS sont signées et protégées contre le DNS spoofing et le cache poisoning.",
     };
   }
 
@@ -294,17 +294,17 @@ async function checkDNSSEC(domain: string): Promise<DNSCheck> {
     return {
       name: "DNSSEC",
       status: "pass",
-      value: "DNSSEC active (DS records)",
-      detail: "Des enregistrements DS existent, indiquant que DNSSEC est deploye.",
+      value: "DNSSEC activé (DS records)",
+      detail: "Des enregistrements DS existent, indiquant que DNSSEC est déployé.",
     };
   }
 
   return {
     name: "DNSSEC",
     status: "warn",
-    value: "DNSSEC non detecte",
-    detail: "DNSSEC ne semble pas active. Les reponses DNS pourraient etre falsifiees.",
-    fix: "Contactez votre registrar ou hebergeur DNS pour activer DNSSEC. C'est souvent un bouton dans le panel d'administration.",
+    value: "DNSSEC non détecté",
+    detail: "DNSSEC ne semble pas activé. Les réponses DNS pourraient être falsifiées.",
+    fix: "Contactez votre registrar ou hébergeur DNS pour activer DNSSEC. C'est souvent un bouton dans le panel d'administration.",
   };
 }
 
@@ -320,7 +320,7 @@ async function checkMX(domain: string): Promise<DNSCheck> {
       name: "Enregistrements MX",
       status: "pass",
       value: mxRecords.slice(0, 3).join(", "),
-      detail: `${mxRecords.length} enregistrement(s) MX detecte(s). La reception d'emails est configuree.`,
+      detail: `${mxRecords.length} enregistrement(s) MX détecté(s). La réception d'emails est configurée.`,
     };
   }
 
@@ -328,7 +328,7 @@ async function checkMX(domain: string): Promise<DNSCheck> {
     name: "Enregistrements MX",
     status: "info",
     value: "Aucun enregistrement MX",
-    detail: "Aucun MX configure. Ce domaine ne recoit pas d'emails, ou utilise un service externe configure au niveau du domaine parent.",
+    detail: "Aucun MX configuré. Ce domaine ne reçoit pas d'emails, ou utilise un service externe configuré au niveau du domaine parent.",
   };
 }
 
@@ -344,7 +344,7 @@ async function checkCAA(domain: string): Promise<DNSCheck> {
       name: "CAA (Certificate Authority Authorization)",
       status: "pass",
       value: caaRecords.slice(0, 3).join(", "),
-      detail: "Les autorites de certification autorisees sont restreintes par CAA.",
+      detail: "Les autorités de certification autorisées sont restreintes par CAA.",
     };
   }
 
@@ -352,8 +352,8 @@ async function checkCAA(domain: string): Promise<DNSCheck> {
     name: "CAA (Certificate Authority Authorization)",
     status: "warn",
     value: "Aucun enregistrement CAA",
-    detail: "Sans CAA, n'importe quelle autorite de certification peut emettre un certificat pour votre domaine.",
-    fix: "Ajoutez un enregistrement CAA DNS pour limiter les CA autorisees. Ex: 0 issue \"letsencrypt.org\"",
+    detail: "Sans CAA, n'importe quelle autorité de certification peut émettre un certificat pour votre domaine.",
+    fix: "Ajoutez un enregistrement CAA DNS pour limiter les CA autorisées. Ex: 0 issue \"letsencrypt.org\"",
   };
 }
 
@@ -373,22 +373,22 @@ async function checkHTTPS(domain: string): Promise<{ ssl: DNSCheck; hsts: DNSChe
       name: "Certificat SSL/TLS",
       status: "pass",
       value: "HTTPS accessible",
-      detail: "Le domaine repond sur HTTPS. Le certificat SSL/TLS est actif. Pour un audit detaille, utilisez SSL Labs.",
+      detail: "Le domaine répond sur HTTPS. Le certificat SSL/TLS est actif. Pour un audit détaillé, utilisez SSL Labs.",
     };
   } catch {
     sslCheck = {
       name: "Certificat SSL/TLS",
       status: "warn",
-      value: "Verification HTTPS non concluante",
-      detail: "Impossible de verifier HTTPS depuis le navigateur (CORS). Pour un test precis, utilisez un outil externe comme SSL Labs.",
+      value: "Vérification HTTPS non concluante",
+      detail: "Impossible de vérifier HTTPS depuis le navigateur (CORS). Pour un test précis, utilisez un outil externe comme SSL Labs.",
     };
   }
 
   hstsCheck = {
     name: "HSTS (HTTP Strict Transport Security)",
     status: "info",
-    value: "Non verifiable depuis le navigateur",
-    detail: `Le header HSTS ne peut pas etre lu cross-origin (CORS). Verifiez avec : curl -sI https://${domain} | grep -i strict`,
+    value: "Non vérifiable depuis le navigateur",
+    detail: `Le header HSTS ne peut pas être lu cross-origin (CORS). Vérifiez avec : curl -sI https://${domain} | grep -i strict`,
   };
 
   return { ssl: sslCheck, hsts: hstsCheck };
@@ -402,14 +402,14 @@ async function performDNSCheck(domain: string, onProgress?: (step: string) => vo
   const parent = getParentDomain(clean);
   const platform = getManagedPlatform(clean);
 
-  onProgress?.("Resolution A/AAAA et NS...");
+  onProgress?.("Résolution A/AAAA et NS...");
   const [aResult, aaaaResult, nsResult] = await Promise.all([
     checkA(clean),
     checkAAAA(clean),
     checkNS(clean),
   ]);
 
-  onProgress?.("Verification SPF, DKIM, DMARC...");
+  onProgress?.("Vérification SPF, DKIM, DMARC...");
   const [spf, dmarc, dkim] = await Promise.all([
     checkSPF(clean),
     checkDMARC(clean),
@@ -448,7 +448,7 @@ async function performDNSCheck(domain: string, onProgress?: (step: string) => vo
         return {
           ...c,
           status: "info" as const,
-          detail: c.detail + ` (Sous-domaine ${platform} : vous n'avez pas acces a la zone DNS, cet element n'est pas modifiable de votre cote.)`,
+          detail: c.detail + ` (Sous-domaine ${platform} : vous n'avez pas accès à la zone DNS, cet élément n'est pas modifiable de votre côté.)`,
           fix: undefined,
         };
       }
@@ -471,35 +471,35 @@ async function performDNSCheck(domain: string, onProgress?: (step: string) => vo
   const warns = checks.filter((c) => c.status === "warn");
   if (platform) {
     recommendations.push(
-      `Ce site est heberge sur ${platform} (sous-domaine ${parent || ""}). Vous ne controlez PAS la zone DNS — les elements SPF, DMARC, DNSSEC, CAA et MX ne sont pas modifiables de votre cote et ont ete reclasses en "info". En revanche, vous pouvez securiser votre site via les headers HTTP (HSTS, CSP, X-Frame-Options) dans votre fichier de configuration ${platform === "Vercel" ? "vercel.json" : platform === "Netlify" ? "netlify.toml" : "de deploiement"}.`
+      `Ce site est hébergé sur ${platform} (sous-domaine ${parent || ""}). Vous ne contrôlez PAS la zone DNS — les éléments SPF, DMARC, DNSSEC, CAA et MX ne sont pas modifiables de votre côté et ont été reclassés en "info". En revanche, vous pouvez sécuriser votre site via les headers HTTP (HSTS, CSP, X-Frame-Options) dans votre fichier de configuration ${platform === "Vercel" ? "vercel.json" : platform === "Netlify" ? "netlify.toml" : "de déploiement"}.`
     );
   } else if (isSub) {
     recommendations.push(
-      `"${clean}" est un sous-domaine. Les enregistrements SPF, DKIM, DMARC et MX sont generalement configures sur le domaine parent (${parent || "domaine.com"}), pas sur les sous-domaines. Ceci explique leur absence.`
+      `"${clean}" est un sous-domaine. Les enregistrements email (SPF, DKIM, DMARC, MX) sont généralement configurés sur le domaine parent (${parent || "domaine.com"}), pas sur les sous-domaines. Leur absence ici est normale.`
     );
   }
   if (fails.length === 0 && warns.length === 0) {
-    recommendations.push("La configuration DNS de ce domaine est bien securisee. Aucun probleme critique detecte.");
+    recommendations.push("La configuration DNS de ce domaine est bien sécurisée. Aucun problème critique détecté.");
   }
   if (platform) {
     recommendations.push(
-      `Pour ameliorer la securite de votre site ${platform}, concentrez-vous sur : les headers de securite HTTP (HSTS, CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy), la configuration HTTPS (automatique sur ${platform}), et la securite applicative (XSS, CSRF, etc.).`
+      `Pour améliorer la sécurité de votre site ${platform}, concentrez-vous sur : les headers de sécurité HTTP (HSTS, CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy), la configuration HTTPS (automatique sur ${platform}), et la sécurité applicative (XSS, CSRF, etc.).`
     );
   }
   if (fails.some((c) => c.name.includes("SPF"))) {
-    recommendations.push("Priorite haute : ajoutez un enregistrement SPF pour empecher l'usurpation d'email.");
+    recommendations.push("Priorité haute : ajoutez un enregistrement SPF pour empêcher l'usurpation d'email.");
   }
   if (fails.some((c) => c.name.includes("DMARC"))) {
-    recommendations.push("Priorite haute : deployez DMARC pour proteger contre le phishing utilisant votre domaine.");
+    recommendations.push("Priorité haute : déployez DMARC pour protéger contre le phishing utilisant votre domaine.");
   }
   if (warns.some((c) => c.name.includes("DNSSEC"))) {
-    recommendations.push("Recommande : activez DNSSEC pour proteger contre le DNS spoofing.");
+    recommendations.push("Recommandé : activez DNSSEC pour protéger contre le DNS spoofing.");
   }
   if (warns.some((c) => c.name.includes("CAA"))) {
-    recommendations.push("Recommande : ajoutez des enregistrements CAA pour restreindre les autorites de certification.");
+    recommendations.push("Recommandé : ajoutez des enregistrements CAA pour restreindre les autorités de certification.");
   }
   if (!isSub && checks.some((c) => c.name.includes("MX") && c.status === "info")) {
-    recommendations.push("Ce domaine n'a pas d'enregistrements MX. Si vous prevoyez d'envoyer/recevoir des emails, configurez-les.");
+    recommendations.push("Ce domaine n'a pas d'enregistrements MX. Si vous prévoyez d'envoyer/recevoir des emails, configurez-les.");
   }
 
   return {
@@ -531,13 +531,13 @@ export function DNSChecker() {
     setChecking(true);
     setResult(null);
     setError("");
-    setProgressMsg("Demarrage des verifications...");
+    setProgressMsg("Démarrage des vérifications...");
 
     try {
       const res = await performDNSCheck(domain.trim(), setProgressMsg);
       setResult(res);
     } catch {
-      setError("Erreur lors de la verification DNS. Verifiez le nom de domaine et reessayez.");
+      setError("Erreur lors de la vérification DNS. Vérifiez le nom de domaine et réessayez.");
     } finally {
       setChecking(false);
       setProgressMsg("");
@@ -586,14 +586,14 @@ export function DNSChecker() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6" style={{ background: "rgba(236,72,153,0.06)", border: "1px solid rgba(236,72,153,0.12)" }}>
             <Globe className="w-3.5 h-3.5 text-[#ec4899]" />
-            <span className="text-[#ec4899]" style={{ fontSize: "0.75rem", fontFamily: "JetBrains Mono, monospace" }}>DNS-over-HTTPS — Requetes reelles</span>
+            <span className="text-[#ec4899]" style={{ fontSize: "0.75rem", fontFamily: "JetBrains Mono, monospace" }}>DNS-over-HTTPS — Requêtes réelles</span>
           </div>
           <h1 style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.8rem, 3vw, 2.2rem)" }} className="text-[#e2e8f0] mb-4">
             DNS{" "}
             <span style={{ background: "linear-gradient(135deg, #ec4899, #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Security Check</span>
           </h1>
           <p className="text-[#94a3b8] max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
-            Verifiez la configuration DNS complete de votre domaine via DNS-over-HTTPS (Google Public DNS).
+            Vérifiez la configuration DNS complète de votre domaine via DNS-over-HTTPS (Google Public DNS).
             A, AAAA, NS, SPF, DKIM, DMARC, DNSSEC, MX, CAA, SSL et HSTS.
           </p>
         </motion.div>
@@ -619,14 +619,14 @@ export function DNSChecker() {
               style={{ fontFamily: "Orbitron, sans-serif", fontSize: "0.85rem" }}
             >
               {checking ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-              {checking ? "Verification..." : "Verifier DNS"}
+              {checking ? "Vérification..." : "Vérifier DNS"}
             </button>
           </div>
 
           <div className="mt-3 flex items-start gap-2 text-[#64748b]" style={{ fontSize: "0.72rem" }}>
             <Shield className="w-3.5 h-3.5 text-[#ec4899] flex-shrink-0 mt-0.5" />
             <span>
-              Requetes DNS reelles via dns.google (DoH). Resultats en temps reel. DKIM teste avec {13} selecteurs courants.
+              Requêtes DNS réelles via dns.google (DoH). Résultats en temps réel. DKIM testé avec {13} sélecteurs courants.
             </span>
           </div>
         </div>
@@ -661,7 +661,7 @@ export function DNSChecker() {
             <div>
               <p className="text-[#ef4444]" style={{ fontSize: "0.85rem" }}>{error}</p>
               <p className="text-[#94a3b8] mt-1" style={{ fontSize: "0.75rem" }}>
-                Verifiez que le domaine existe et que vous avez une connexion internet. Le format attendu est : domaine.com (sans https://).
+                Vérifiez que le domaine existe et que vous avez une connexion internet. Le format attendu est : domaine.com (sans https://).
               </p>
             </div>
           </motion.div>
@@ -675,10 +675,10 @@ export function DNSChecker() {
               <div className="bg-[#8b5cf6]/5 border border-[#8b5cf6]/20 rounded-xl p-4 flex items-start gap-3">
                 <Layers className="w-5 h-5 text-[#8b5cf6] flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-[#8b5cf6]" style={{ fontSize: "0.9rem" }}>Sous-domaine detecte</p>
+                  <p className="text-[#8b5cf6]" style={{ fontSize: "0.9rem" }}>Sous-domaine détecté</p>
                   <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>
                     <strong className="text-[#e2e8f0]">{result.domain}</strong> est un sous-domaine de <strong className="text-[#e2e8f0]">{result.parentDomain}</strong>.
-                    Les enregistrements email (SPF, DKIM, DMARC, MX) sont generalement configures sur le domaine parent, pas sur les sous-domaines. Leur absence ici est normale.
+                    Les enregistrements email (SPF, DKIM, DMARC, MX) sont généralement configurés sur le domaine parent, pas sur les sous-domaines. Leur absence ici est normale.
                   </p>
                 </div>
               </div>
@@ -710,7 +710,7 @@ export function DNSChecker() {
                   />
                 </div>
                 <p className="text-[#64748b] mt-3" style={{ fontSize: "0.72rem" }}>
-                  Score base sur {result.checks.filter((c) => c.status !== "info").length} verifications (les "info" ne comptent pas)
+                  Score basé sur {result.checks.filter((c) => c.status !== "info").length} vérifications (les "info" ne comptent pas)
                 </p>
               </div>
 
@@ -825,10 +825,10 @@ export function DNSChecker() {
             <div className="bg-[#39ff14]/3 border border-[#39ff14]/10 rounded-xl p-4 flex items-start gap-3">
               <CheckCircle className="w-5 h-5 text-[#39ff14] flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-[#39ff14]" style={{ fontSize: "0.85rem" }}>Resultats DNS reels</p>
+                <p className="text-[#39ff14]" style={{ fontSize: "0.85rem" }}>Résultats DNS réels</p>
                 <p className="text-[#94a3b8]" style={{ fontSize: "0.75rem" }}>
-                  Toutes les requetes sont effectuees en temps reel via DNS-over-HTTPS (Google Public DNS).
-                  {result.checks.length} verifications effectuees. Aucune donnee simulee ou cachee.
+                  Toutes les requêtes sont effectuées en temps réel via DNS-over-HTTPS (Google Public DNS).
+                  {result.checks.length} vérifications effectuées. Aucune donnée simulée ou cachée.
                 </p>
               </div>
             </div>

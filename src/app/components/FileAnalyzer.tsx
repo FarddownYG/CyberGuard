@@ -138,7 +138,7 @@ export function FileAnalyzer() {
       if (err instanceof VTError) {
         setVtError(err.message);
       } else {
-        setVtError("Erreur lors de l'analyse. Verifiez votre connexion.");
+        setVtError("Erreur lors de l'analyse. Vérifiez votre connexion.");
       }
       setVtPhase("error");
     }
@@ -159,7 +159,7 @@ export function FileAnalyzer() {
       setVtStatus("Upload du fichier vers VirusTotal...");
 
       if (currentFile.size > 32 * 1024 * 1024) {
-        setVtError("Le fichier depasse 32 MB. L'upload de gros fichiers necessite un endpoint special (non supporte en free tier).");
+        setVtError("Le fichier dépasse 32 MB. L'upload de gros fichiers nécessite un endpoint special (non supporté en free tier).");
         setVtPhase("error");
         return;
       }
@@ -178,7 +178,7 @@ export function FileAnalyzer() {
       // Now fetch full report
       const sha256 = result?.sha256;
       if (sha256) {
-        setVtStatus("Recuperation du rapport complet...");
+        setVtStatus("Récupération du rapport complet...");
         try {
           const report = await getFileReport(sha256);
           const parsed = parseFileResults(report);
@@ -253,7 +253,7 @@ export function FileAnalyzer() {
       case "clean": case "harmless": return "Sain";
       case "malicious": return "Malveillant";
       case "suspicious": return "Suspect";
-      default: return "Non evalue";
+      default: return "Non évalué";
     }
   };
 
@@ -271,7 +271,7 @@ export function FileAnalyzer() {
           </h1>
           <p className="text-[#94a3b8] max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
             Calculez les empreintes cryptographiques de vos fichiers puis scannez-les automatiquement
-            avec les moteurs antivirus VirusTotal pour detecter les menaces.
+            avec les moteurs antivirus VirusTotal pour détecter les menaces.
           </p>
         </motion.div>
 
@@ -295,10 +295,10 @@ export function FileAnalyzer() {
           <input ref={fileRef} type="file" onChange={handleFileSelect} className="hidden" />
           <Upload className={`w-12 h-12 mx-auto mb-4 ${dragOver ? "text-[#ef4444]" : "text-[#64748b]"}`} />
           <p className="text-[#e2e8f0] mb-2">
-            {vtPhase === "hashing" ? "Calcul des hash en cours..." : "Glissez-deposez un fichier ici"}
+            {vtPhase === "hashing" ? "Calcul des hash en cours..." : "Glissez-déposez un fichier ici"}
           </p>
           <p className="text-[#64748b]" style={{ fontSize: "0.85rem" }}>
-            ou cliquez pour selectionner un fichier (max 32 MB pour l'upload VT)
+            ou cliquez pour sélectionner un fichier (max 32 MB pour l'upload VT)
           </p>
         </div>
 
@@ -324,7 +324,7 @@ export function FileAnalyzer() {
                   <p className="text-[#e2e8f0]" style={{ fontSize: "0.9rem" }}>{formatBytes(result.size)}</p>
                 </div>
                 <div className="bg-[#0a0a0f] rounded-lg p-3">
-                  <p className="text-[#64748b]" style={{ fontSize: "0.75rem" }}>Derniere modification</p>
+                  <p className="text-[#64748b]" style={{ fontSize: "0.75rem" }}>Dernière modification</p>
                   <p className="text-[#e2e8f0]" style={{ fontSize: "0.9rem" }}>{result.lastModified}</p>
                 </div>
               </div>
@@ -334,7 +334,7 @@ export function FileAnalyzer() {
             {[
               { label: "Empreinte locale", value: result.md5, note: "FNV-based — ce n'est PAS du vrai MD5" },
               { label: "SHA-1", value: result.sha1, note: "Web Crypto API" },
-              { label: "SHA-256", value: result.sha256, note: "Web Crypto API — utilise pour le lookup VT" },
+              { label: "SHA-256", value: result.sha256, note: "Web Crypto API — utilisé pour le lookup VT" },
             ].map((h) => (
               <div key={h.label} className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-2">
@@ -372,10 +372,10 @@ export function FileAnalyzer() {
                 <div className="bg-[#f59e0b]/5 border border-[#f59e0b]/20 rounded-xl p-4 flex items-start gap-3">
                   <Info className="w-5 h-5 text-[#f59e0b] flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-[#f59e0b]" style={{ fontSize: "0.9rem" }}>API non configuree</p>
+                    <p className="text-[#f59e0b]" style={{ fontSize: "0.9rem" }}>API non configurée</p>
                     <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>
                       Ajoutez <code className="bg-[#f59e0b]/10 px-1 rounded">VITE_VIRUSTOTAL_API_KEY</code> dans vos variables
-                      d'environnement Vercel pour activer le scan automatique. Les hash sont calcules 100% localement via Web Crypto API.
+                      d'environnement Vercel pour activer le scan automatique. Les hash sont calculés 100% localement via Web Crypto API.
                     </p>
                   </div>
                 </div>
@@ -399,7 +399,7 @@ export function FileAnalyzer() {
                     Fichier inconnu
                   </p>
                   <p className="text-[#94a3b8] mb-4" style={{ fontSize: "0.85rem" }}>
-                    Ce fichier n'a jamais ete analyse par VirusTotal. Vous pouvez le soumettre pour analyse.
+                    Ce fichier n'a jamais été analysé par VirusTotal. Vous pouvez le soumettre pour analyse.
                   </p>
                   <button
                     onClick={handleUploadToVT}
@@ -407,7 +407,7 @@ export function FileAnalyzer() {
                     style={{ fontFamily: "Orbitron, sans-serif", fontSize: "0.85rem" }}
                   >
                     <Upload className="w-4 h-4" />
-                    Soumettre a VirusTotal
+                    Soumettre à VirusTotal
                   </button>
                 </div>
               )}
@@ -429,13 +429,13 @@ export function FileAnalyzer() {
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                     {/* Score */}
                     <div className="bg-[#111827] border border-[#8b5cf6]/20 rounded-xl p-6 text-center">
-                      <p className="text-[#94a3b8] mb-2" style={{ fontSize: "0.85rem" }}>Resultat VirusTotal</p>
+                      <p className="text-[#94a3b8] mb-2" style={{ fontSize: "0.85rem" }}>Résultat VirusTotal</p>
                       <div className="flex items-center justify-center gap-4 flex-wrap">
                         {[
                           { label: "Sains", count: vtResult.stats.harmless, color: "#39ff14" },
                           { label: "Malveillants", count: vtResult.stats.malicious, color: "#ef4444" },
                           { label: "Suspects", count: vtResult.stats.suspicious, color: "#f59e0b" },
-                          { label: "Non evalues", count: vtResult.stats.undetected, color: "#64748b" },
+                          { label: "Non évalués", count: vtResult.stats.undetected, color: "#64748b" },
                         ].map((s) => (
                           <span key={s.label} className="flex items-center gap-1.5" style={{ fontSize: "0.8rem" }}>
                             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
@@ -464,7 +464,7 @@ export function FileAnalyzer() {
                       <div className="bg-[#ef4444]/5 border border-[#ef4444]/20 rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-3">
                           <Bug className="w-5 h-5 text-[#ef4444]" />
-                          <p className="text-[#ef4444]" style={{ fontSize: "0.9rem" }}>Menaces detectees</p>
+                          <p className="text-[#ef4444]" style={{ fontSize: "0.9rem" }}>Menaces détectées</p>
                         </div>
                         <div className="space-y-2">
                           {vtResult.threats.map((t, i) => (
@@ -492,12 +492,12 @@ export function FileAnalyzer() {
                       )}
                       <div>
                         <p style={{ fontSize: "0.9rem", color: vtResult.stats.malicious === 0 ? "#39ff14" : "#ef4444" }}>
-                          {vtResult.stats.malicious === 0 ? "Fichier sain" : `${vtResult.stats.malicious} moteur(s) detectent une menace`}
+                          {vtResult.stats.malicious === 0 ? "Fichier sain" : `${vtResult.stats.malicious} moteur(s) détectent une menace`}
                         </p>
                         <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>
                           {vtResult.stats.malicious === 0
-                            ? "Aucune menace detectee par les moteurs antivirus VirusTotal."
-                            : "Ce fichier a ete signale comme malveillant. Ne l'executez pas et supprimez-le immediatement."}
+                            ? "Aucune menace détectée par les moteurs antivirus VirusTotal."
+                            : "Ce fichier a été signalé comme malveillant. Ne l'exécutez pas et supprimez-le immédiatement."}
                         </p>
                       </div>
                     </div>
@@ -506,7 +506,7 @@ export function FileAnalyzer() {
                     {vtResult.engines.length > 0 && (
                       <details className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl overflow-hidden">
                         <summary className="p-4 cursor-pointer text-[#e2e8f0] hover:bg-[#1e293b]/30 transition-colors" style={{ fontSize: "0.9rem" }}>
-                          Details par moteur antivirus ({vtResult.engines.length} moteurs)
+                          Détails par moteur antivirus ({vtResult.engines.length} moteurs)
                         </summary>
                         <div className="divide-y divide-[#00d4ff]/5 max-h-80 overflow-y-auto">
                           {vtResult.engines.map((e) => (
@@ -534,10 +534,10 @@ export function FileAnalyzer() {
                     <div className="bg-[#39ff14]/5 border border-[#39ff14]/20 rounded-xl p-4 flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-[#39ff14] flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-[#39ff14]" style={{ fontSize: "0.9rem" }}>Analyse reelle VirusTotal API v3</p>
+                        <p className="text-[#39ff14]" style={{ fontSize: "0.9rem" }}>Analyse réelle VirusTotal API v3</p>
                         <p className="text-[#94a3b8]" style={{ fontSize: "0.8rem" }}>
-                          Ces resultats proviennent de l'API VirusTotal v3 en temps reel.
-                          Les hash sont calcules localement via Web Crypto API.
+                          Ces résultats proviennent de l'API VirusTotal v3 en temps réel.
+                          Les hash sont calculés localement via Web Crypto API.
                         </p>
                       </div>
                     </div>

@@ -12,7 +12,7 @@ const mainLinks = [
 const toolLinks = [
   { path: "/tools", label: "Hub Outils", icon: Wrench, desc: "Tous nos outils" },
   { path: "/ssl-checker", label: "SSL Checker", icon: Lock, desc: "Certificats SSL/TLS" },
-  { path: "/tools/password", label: "Mots de passe", icon: Key, desc: "Generateur securise" },
+  { path: "/tools/password", label: "Mots de passe", icon: Key, desc: "Générateur sécurisé" },
   { path: "/tools/file-analyzer", label: "Analyseur fichiers", icon: FileSearch, desc: "Hash SHA-256" },
   { path: "/tools/email-checker", label: "Email Checker", icon: Mail, desc: "Anti-phishing" },
   { path: "/tools/dns-checker", label: "DNS Security", icon: Globe, desc: "SPF/DKIM/DMARC" },
@@ -221,7 +221,7 @@ export function Navbar() {
               }`}
               style={{ fontSize: "0.82rem" }}
             >
-              A propos
+              À propos
               {isActive("/about") && (
                 <motion.div
                   layoutId="activeTab"
@@ -343,7 +343,7 @@ export function Navbar() {
                   }`}
                   style={{ fontSize: "0.9rem" }}
                 >
-                  A propos
+                  À propos
                 </Link>
               </div>
             </motion.div>

@@ -16,8 +16,8 @@ export function SSLCheckerPage() {
             <span style={{ background: "linear-gradient(135deg, #39ff14, #00d4ff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>certificats SSL</span>
           </h1>
           <p className="text-[#94a3b8] max-w-2xl mx-auto" style={{ lineHeight: 1.7 }}>
-            Decouvrez pourquoi les certificats SSL/TLS sont essentiels pour la securite de votre site web
-            et comment notre projet SEAL peut vous aider a les surveiller.
+            Découvrez pourquoi les certificats SSL/TLS sont essentiels pour la sécurité de votre site web
+            et comment notre projet SEAL peut vous aider à les surveiller.
           </p>
         </motion.div>
 
@@ -30,10 +30,10 @@ export function SSLCheckerPage() {
         >
           <Info className="w-5 h-5 text-[#00d4ff] flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-[#00d4ff]" style={{ fontSize: "0.9rem" }}>Verifiez vos certificats SSL avec SEAL</p>
+            <p className="text-[#00d4ff]" style={{ fontSize: "0.9rem" }}>Vérifiez vos certificats SSL avec SEAL</p>
             <p className="text-[#94a3b8] mb-3" style={{ fontSize: "0.8rem", lineHeight: 1.6 }}>
-              Notre outil de verification SSL est disponible via <strong className="text-[#e2e8f0]">SEAL</strong> (Secure Expiry Alert & Logging).
-              Testez la validite de vos certificats, detectez les expirations et analysez la configuration TLS de n'importe quel domaine.
+              Notre outil de vérification SSL est disponible via <strong className="text-[#e2e8f0]">SEAL</strong> (Secure Expiry Alert & Logging).
+              Testez la validité de vos certificats, détectez les expirations et analysez la configuration TLS de n'importe quel domaine.
             </p>
             <a
               href="https://seal-beta-liart.vercel.app"
@@ -67,7 +67,7 @@ export function SSLCheckerPage() {
                 </div>
                 <div>
                   <h2 style={{ fontFamily: "Orbitron, sans-serif", fontSize: "1.3rem" }} className="text-[#e2e8f0]">
-                    Decouvrez <span className="text-[#00d4ff]">SEAL</span>
+                    Découvrez <span className="text-[#00d4ff]">SEAL</span>
                   </h2>
                   <p className="text-[#64748b]" style={{ fontSize: "0.8rem" }}>
                     Secure Expiry Alert & Logging
@@ -77,7 +77,7 @@ export function SSLCheckerPage() {
 
               <div className="space-y-4 mb-8">
                 <p className="text-[#94a3b8]" style={{ lineHeight: 1.8 }}>
-                  SEAL (Secure Expiry Alert & Logging) est un de nos projets dedies a la surveillance SSL.
+                  SEAL (Secure Expiry Alert & Logging) est un de nos projets dédiés à la surveillance SSL.
                   Il permet de monitorer automatiquement vos certificats SSL et de recevoir des alertes
                   avant leur expiration.
                 </p>
@@ -104,25 +104,25 @@ export function SSLCheckerPage() {
 
                 <div className="space-y-4 text-[#94a3b8]" style={{ lineHeight: 1.8, fontSize: "0.95rem" }}>
                   <p>
-                    <span className="text-[#39ff14]">SSL (Secure Sockets Layer)</span> est un protocole de securite
-                    qui cree un lien chiffre entre un serveur web et un navigateur. Aujourd'hui on utilise son
+                    <span className="text-[#39ff14]">SSL (Secure Sockets Layer)</span> est un protocole de sécurité
+                    qui crée un lien chiffré entre un serveur web et un navigateur. Aujourd'hui on utilise son
                     successeur <span className="text-[#39ff14]">TLS (Transport Layer Security)</span>, mais on
                     continue de dire "SSL" par habitude.
                   </p>
 
                   <p>
-                    Concretement, quand vous voyez le petit <span className="text-[#39ff14]">cadenas vert</span> et
-                    le <span className="text-[#39ff14]">HTTPS</span> dans la barre d'adresse, ca veut dire que
-                    la connexion est chiffree. Toutes les donnees echangees entre l'utilisateur et le site
-                    (mots de passe, numeros de carte, donnees personnelles) sont <span className="text-[#00d4ff]">illisibles</span> pour
+                    Concrètement, quand vous voyez le petit <span className="text-[#39ff14]">cadenas vert</span> et
+                    le <span className="text-[#39ff14]">HTTPS</span> dans la barre d'adresse, ça veut dire que
+                    la connexion est chiffrée. Toutes les données échangées entre l'utilisateur et le site
+                    (mots de passe, numéros de carte, données personnelles) sont <span className="text-[#00d4ff]">illisibles</span> pour
                     quiconque essaierait de les intercepter.
                   </p>
 
                   <div className="bg-[#111827] rounded-lg p-4 border-l-4 border-[#ef4444]">
                     <p className="text-[#e2e8f0]" style={{ fontSize: "0.9rem" }}>
                       <span className="text-[#ef4444]">Sans SSL</span>, c'est comme envoyer une carte postale :
-                      tout le monde peut lire ce qui est ecrit dessus. Avec SSL, c'est comme envoyer une lettre
-                      dans un coffre-fort dont seul le destinataire a la cle.
+                      tout le monde peut lire ce qui est écrit dessus. Avec SSL, c'est comme envoyer une lettre
+                      dans un coffre-fort dont seul le destinataire a la clé.
                     </p>
                   </div>
 
@@ -133,7 +133,7 @@ export function SSLCheckerPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {[
                       {
-                        title: "Protection des donnees",
+                        title: "Protection des données",
                         desc: "Chiffrement de bout en bout de toutes les informations sensibles transmises.",
                         icon: Shield,
                       },
@@ -144,17 +144,17 @@ export function SSLCheckerPage() {
                       },
                       {
                         title: "SEO Google",
-                        desc: "Google penalise les sites sans SSL dans son classement. HTTPS = meilleur ranking.",
+                        desc: "Google pénalise les sites sans SSL dans son classement. HTTPS = meilleur ranking.",
                         icon: Search,
                       },
                       {
-                        title: "Conformite legale",
-                        desc: "Le RGPD exige la protection des donnees. Pas de SSL = pas de conformite.",
+                        title: "Conformité légale",
+                        desc: "Le RGPD exige la protection des données. Pas de SSL = pas de conformité.",
                         icon: ShieldCheck,
                       },
                       {
                         title: "Anti-phishing",
-                        desc: "Empeche les attaques Man-in-the-Middle et le vol de donnees en transit.",
+                        desc: "Empêche les attaques Man-in-the-Middle et le vol de données en transit.",
                         icon: ShieldAlert,
                       },
                       {
@@ -177,9 +177,9 @@ export function SSLCheckerPage() {
 
                   <div className="bg-[#111827] rounded-lg p-4 border-l-4 border-[#39ff14] mt-4">
                     <p className="text-[#e2e8f0]" style={{ fontSize: "0.9rem" }}>
-                      <span className="text-[#39ff14]">En resume :</span> un site sans SSL en 2026, c'est comme
-                      une maison sans serrure. Ca expose vos visiteurs, ruine votre referencement et vous met
-                      en infraction legale. C'est tout simplement <span className="text-[#00d4ff]">non-negociable</span>.
+                      <span className="text-[#39ff14]">En résumé :</span> un site sans SSL en 2026, c'est comme
+                      une maison sans serrure. Ça expose vos visiteurs, ruine votre référencement et vous met
+                      en infraction légale. C'est tout simplement <span className="text-[#00d4ff]">non-négociable</span>.
                     </p>
                   </div>
                 </div>

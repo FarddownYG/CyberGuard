@@ -44,14 +44,14 @@ function useInView(ref: React.RefObject<HTMLElement | null>, opts?: { once?: boo
 
 // ─── Features ────────────────────────────────────────────────────────────
 const features = [
-  { icon: Search, title: "Pentesting", desc: "Pentest automatise propulse par Shannon AI — analyse white-box + exploitation dynamique reelle.", link: "/pentesting", color: "#00d4ff", tag: "Pentest" },
-  { icon: Eye, title: "Analyse VirusTotal", desc: "Verifiez si une URL est malveillante avec 70+ moteurs antivirus en simultane.", link: "/virustotal", color: "#8b5cf6", tag: "URL Scan" },
-  { icon: Lock, title: "SSL Checker", desc: "Testez la validite de votre certificat SSL et la securite de vos connexions HTTPS.", link: "/ssl-checker", color: "#39ff14", tag: "Certificat" },
-  { icon: Key, title: "Generateur de Mots de Passe", desc: "Creez des mots de passe cryptographiquement securises avec Web Crypto API.", link: "/tools/password", color: "#f59e0b", tag: "Password" },
+  { icon: Search, title: "Pentesting", desc: "Pentest automatisé propulsé par Shannon AI — analyse white-box + exploitation dynamique réelle.", link: "/pentesting", color: "#00d4ff", tag: "Pentest" },
+  { icon: Eye, title: "Analyse VirusTotal", desc: "Vérifiez si une URL est malveillante avec 70+ moteurs antivirus en simultané.", link: "/virustotal", color: "#8b5cf6", tag: "URL Scan" },
+  { icon: Lock, title: "SSL Checker", desc: "Testez la validité de votre certificat SSL et la sécurité de vos connexions HTTPS.", link: "/ssl-checker", color: "#39ff14", tag: "Certificat" },
+  { icon: Key, title: "Générateur de Mots de Passe", desc: "Créez des mots de passe cryptographiquement sécurisés avec Web Crypto API.", link: "/tools/password", color: "#f59e0b", tag: "Password" },
   { icon: FileSearch, title: "Analyseur de Fichiers", desc: "Calculez les hash SHA-256/SHA-1 de vos fichiers directement dans le navigateur.", link: "/tools/file-analyzer", color: "#ef4444", tag: "Hash" },
-  { icon: Mail, title: "Email Checker", desc: "Detectez les emails jetables, le typosquatting et le phishing.", link: "/tools/email-checker", color: "#06b6d4", tag: "Anti-Phishing" },
-  { icon: Globe, title: "DNS Security", desc: "Verifiez SPF, DKIM, DMARC, DNSSEC et HSTS de votre domaine.", link: "/tools/dns-checker", color: "#ec4899", tag: "DNS" },
-  { icon: BookOpen, title: "Blog Securite", desc: "Apprenez les bonnes pratiques de cybersecurite et les attaques courantes.", link: "/blog", color: "#39ff14", tag: "Education" },
+  { icon: Mail, title: "Email Checker", desc: "Détectez les emails jetables, le typosquatting et le phishing.", link: "/tools/email-checker", color: "#06b6d4", tag: "Anti-Phishing" },
+  { icon: Globe, title: "DNS Security", desc: "Vérifiez SPF, DKIM, DMARC, DNSSEC et HSTS de votre domaine.", link: "/tools/dns-checker", color: "#ec4899", tag: "DNS" },
+  { icon: BookOpen, title: "Blog Sécurité", desc: "Apprenez les bonnes pratiques de cybersécurité et les attaques courantes.", link: "/blog", color: "#39ff14", tag: "Éducation" },
 ];
 
 // ─── Terminal Lines ──────────────────────────────────────────────────────
@@ -340,7 +340,7 @@ export function HomePage() {
                   transition={{ duration: 2, repeat: Infinity }}
                 />
                 <span className="text-[#00d4ff]" style={{ fontSize: "0.8rem", fontFamily: "JetBrains Mono, monospace" }}>
-                  v3.0 — Suite complete de cybersecurite
+                  v3.0 — Suite complète de cybersécurité
                 </span>
               </motion.div>
 
@@ -353,9 +353,9 @@ export function HomePage() {
                   letterSpacing: "-0.02em",
                 }}
               >
-                Securisez votre{" "}
+                Sécurisez votre{" "}
                 <GlitchText
-                  text="presence digitale"
+                  text="présence digitale"
                   style={{
                     background: "linear-gradient(135deg, #00d4ff, #39ff14)",
                     WebkitBackgroundClip: "text",
@@ -373,8 +373,8 @@ export function HomePage() {
                 className="text-[#94a3b8] mb-10 max-w-lg"
                 style={{ fontSize: "clamp(0.9rem, 2vw, 1.05rem)", lineHeight: 1.8 }}
               >
-                Detectez les vulnerabilites, analysez les URLs suspectes et protegez vos sites
-                avec notre suite d'outils de pentest automatises. Gratuit. Open-source.
+                Détectez les vulnérabilités, analysez les URLs suspectes et protégez vos sites
+                avec notre suite d'outils de pentest automatisés. Gratuit. Open-source.
               </motion.p>
 
               <motion.div
@@ -431,7 +431,7 @@ export function HomePage() {
               >
                 {[
                   { icon: ShieldCheck, label: "100% Gratuit" },
-                  { icon: Fingerprint, label: "Zero data collectee" },
+                  { icon: Fingerprint, label: "Zéro data collectée" },
                   { icon: Cpu, label: "Traitement local" },
                 ].map((badge, i) => (
                   <motion.div
@@ -496,7 +496,7 @@ export function HomePage() {
                     <TerminalLine text="[SCAN] Testing SSL/TLS configuration..." delay={4400} />
                     <TerminalLine text="[SCAN] Running XSS detection..." delay={5200} />
                     <TerminalLine text="[SCAN] Analyzing SQL injection vectors..." delay={6000} />
-                    <TerminalLine text='[OK] Score: 92/100 — "Site securise"' delay={7200} />
+                    <TerminalLine text='[OK] Score: 92/100 — "Site sécurisé"' delay={7200} />
 
                     <motion.div
                       initial={{ opacity: 0 }}
@@ -568,13 +568,13 @@ export function HomePage() {
               className="text-[#e2e8f0] mb-4"
               style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.3rem, 3vw, 2.2rem)" }}
             >
-              Suite complete de{" "}
+              Suite complète de{" "}
               <span style={{ background: "linear-gradient(135deg, #00d4ff, #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                securite
+                sécurité
               </span>
             </h2>
             <p className="text-[#94a3b8] max-w-2xl mx-auto" style={{ fontSize: "clamp(0.85rem, 2vw, 1rem)", lineHeight: 1.7 }}>
-              Analysez, testez et renforcez la securite de votre presence en ligne avec nos outils gratuits.
+              Analysez, testez et renforcez la sécurité de votre présence en ligne avec nos outils gratuits.
             </p>
           </motion.div>
 
@@ -646,7 +646,7 @@ export function HomePage() {
               { value: "8", suffix: "+", label: "Outils disponibles", color: "#00d4ff" },
               { value: "30", suffix: "+", label: "Articles blog", color: "#39ff14" },
               { value: "70", suffix: "+", label: "Moteurs AV (via VT)", color: "#8b5cf6" },
-              { value: "0", suffix: "", label: "Donnees collectees", color: "#f59e0b" },
+              { value: "0", suffix: "", label: "Données collectées", color: "#f59e0b" },
             ].map((s, i) => (
               <motion.div
                 key={s.label}
@@ -710,7 +710,7 @@ export function HomePage() {
               className="text-[#e2e8f0] mb-4"
               style={{ fontFamily: "Orbitron, sans-serif", fontSize: "clamp(1.3rem, 3vw, 2rem)" }}
             >
-              Pret a securiser votre site ?
+              Prêt à sécuriser votre site ?
             </h2>
             <p className="text-[#94a3b8] mb-8 max-w-xl mx-auto" style={{ lineHeight: 1.7, fontSize: "clamp(0.85rem, 2vw, 1rem)" }}>
               Lancez votre premier scan en moins de 30 secondes. Aucune inscription requise.

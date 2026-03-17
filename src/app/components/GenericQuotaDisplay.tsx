@@ -156,7 +156,7 @@ export function GenericQuotaDisplay({ config, title, accentColor = "#00d4ff" }: 
             </p>
             {quota.manualBlockRemaining > 0 && (
               <p className="text-[#64748b] mt-0.5" style={{ fontSize: "0.68rem", fontFamily: "JetBrains Mono, monospace" }}>
-                Deblocage dans : {formatDuration(quota.manualBlockRemaining)}
+                Déblocage dans : {formatDuration(quota.manualBlockRemaining)}
               </p>
             )}
           </div>

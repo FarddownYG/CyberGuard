@@ -14,24 +14,24 @@ function translateCrackTime(display: string | number): string {
   const s = String(display);
   return s
     .replace(/less than a second/gi, "moins d'une seconde")
-    .replace(/instant/gi, "instantane")
+    .replace(/instant/gi, "instantané")
     .replace(/(\d+)\s*seconds?/gi, "$1 seconde(s)")
     .replace(/(\d+)\s*minutes?/gi, "$1 minute(s)")
     .replace(/(\d+)\s*hours?/gi, "$1 heure(s)")
     .replace(/(\d+)\s*days?/gi, "$1 jour(s)")
     .replace(/(\d+)\s*months?/gi, "$1 mois")
     .replace(/(\d+)\s*years?/gi, "$1 an(s)")
-    .replace(/centuries/gi, "des siecles");
+    .replace(/centuries/gi, "des siècles");
 }
 
 function translatePattern(pattern: string): string {
   const map: Record<string, string> = {
     dictionary: "Mot du dictionnaire",
     spatial: "Suite clavier (ex: qwerty)",
-    repeat: "Caracteres repetes",
+    repeat: "Caractères répétés",
     sequence: "Suite logique (abc, 123...)",
-    regex: "Pattern detecte",
-    date: "Date detectee",
+    regex: "Pattern détecté",
+    date: "Date détectée",
     bruteforce: "Force brute",
   };
   return map[pattern] || pattern;
@@ -41,21 +41,21 @@ function translateDictName(name: string): string {
   const map: Record<string, string> = {
     passwords: "mots de passe courants",
     english_wikipedia: "Wikipedia anglais",
-    female_names: "prenoms feminins",
-    male_names: "prenoms masculins",
+    female_names: "prénoms féminins",
+    male_names: "prénoms masculins",
     surnames: "noms de famille",
-    us_tv_and_film: "series/films US",
+    us_tv_and_film: "séries/films US",
   };
   return map[name] || name;
 }
 
 function getStrengthLabel(score: number): { label: string; color: string } {
   switch (score) {
-    case 0: return { label: "Tres faible", color: "#ef4444" };
+    case 0: return { label: "Très faible", color: "#ef4444" };
     case 1: return { label: "Faible", color: "#f97316" };
     case 2: return { label: "Moyen", color: "#f59e0b" };
     case 3: return { label: "Fort", color: "#00d4ff" };
-    case 4: return { label: "Tres fort", color: "#39ff14" };
+    case 4: return { label: "Très fort", color: "#39ff14" };
     default: return { label: "Inconnu", color: "#64748b" };
   }
 }
@@ -93,18 +93,18 @@ export function PasswordGenerator() {
   const recommendations = useMemo(() => {
     if (!checkPassword || !charBreakdown) return [];
     const recs: string[] = [];
-    if (charBreakdown.length < 14) recs.push("Allongez votre mot de passe pour atteindre 14-16 caracteres.");
+    if (charBreakdown.length < 14) recs.push("Allongez votre mot de passe pour atteindre 14-16 caractères.");
     if (charBreakdown.upper === 0) recs.push("Ajoutez des lettres majuscules.");
     if (charBreakdown.lower === 0) recs.push("Ajoutez des lettres minuscules.");
     if (charBreakdown.digits === 0) recs.push("Ajoutez des chiffres.");
     if (charBreakdown.symbols === 0) recs.push("Ajoutez des symboles (!@#$%...).");
     if (charBreakdown.length >= 14 && charBreakdown.upper > 0 && charBreakdown.lower > 0 && charBreakdown.digits > 0 && charBreakdown.symbols > 0) {
       if (analysis && analysis.score < 4) {
-        recs.push("Evitez les mots du dictionnaire, noms propres ou suites logiques.");
-        recs.push("Utilisez une phrase de passe ou un generateur aleatoire.");
+        recs.push("Évitez les mots du dictionnaire, noms propres ou suites logiques.");
+        recs.push("Utilisez une phrase de passe ou un générateur aléatoire.");
       }
     }
-    if (charBreakdown.length < 8) recs.push("Un mot de passe de moins de 8 caracteres est dangereusement court.");
+    if (charBreakdown.length < 8) recs.push("Un mot de passe de moins de 8 caractères est dangereusement court.");
     return recs;
   }, [checkPassword, charBreakdown, analysis]);
 
@@ -171,7 +171,7 @@ export function PasswordGenerator() {
             <span style={{ background: "linear-gradient(135deg, #f59e0b, #ef4444)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Passe</span>
           </h1>
           <p className="text-[#94a3b8] max-w-xl mx-auto" style={{ lineHeight: 1.7 }}>
-            Analysez la robustesse de vos mots de passe ou generez-en de nouveaux, cryptographiquement securises.
+            Analysez la robustesse de vos mots de passe ou générez-en de nouveaux, cryptographiquement sécurisés.
           </p>
         </motion.div>
 
@@ -236,10 +236,10 @@ export function PasswordGenerator() {
                     </p>
                     <p className="text-[#94a3b8]" style={{ fontSize: "0.75rem" }}>
                       {breachChecking
-                        ? "Verification en cours..."
+                        ? "Vérification en cours..."
                         : breachResult?.found
-                          ? `Ce mot de passe a ete trouve ${breachResult.count.toLocaleString("fr-FR")} fois dans des fuites de donnees. Changez-le immediatement.`
-                          : "Aucune occurrence trouvee (cela ne garantit pas sa securite, mais il n'est pas liste)."}
+                          ? `Ce mot de passe a été trouvé ${breachResult.count.toLocaleString("fr-FR")} fois dans des fuites de données. Changez-le immédiatement.`
+                          : "Aucune occurrence trouvée (cela ne garantit pas sa sécurité, mais il n'est pas listé)."}
                     </p>
                   </div>
                 </div>
@@ -282,7 +282,7 @@ export function PasswordGenerator() {
                   <div className="flex items-center gap-2 p-3">
                     <Clock className="w-4 h-4 flex-shrink-0" style={{ color: strength.color }} />
                     <p className="text-[#e2e8f0]" style={{ fontSize: "0.85rem" }}>
-                      Ce mot de passe pourrait etre craque en{" "}
+                      Ce mot de passe pourrait être craqué en{" "}
                       <span style={{ color: strength.color, fontFamily: "JetBrains Mono, monospace" }}>
                         ≈ {translateCrackTime(analysis.crack_times_display.offline_slow_hashing_1e4_per_second)}
                       </span>
@@ -339,7 +339,7 @@ export function PasswordGenerator() {
                   <div className="border-t border-[#1e293b] px-3 py-2 flex items-center gap-2">
                     <Hash className="w-3 h-3 text-[#4a5568]" />
                     <span className="text-[#4a5568]" style={{ fontSize: "0.7rem", fontFamily: "JetBrains Mono, monospace" }}>
-                      {Number(analysis.guesses).toLocaleString("fr-FR")} combinaisons a tester (10^{analysis.guesses_log10.toFixed(1)})
+                      {Number(analysis.guesses).toLocaleString("fr-FR")} combinaisons à tester (10^{analysis.guesses_log10.toFixed(1)})
                     </span>
                   </div>
                 </div>
@@ -347,7 +347,7 @@ export function PasswordGenerator() {
                 {/* Pattern analysis from zxcvbn */}
                 {analysis.sequence && analysis.sequence.length > 0 && (
                   <div className="bg-[#0a0a0f] rounded-lg p-3" style={{ border: "1px solid rgba(255,255,255,0.04)" }}>
-                    <p className="text-[#94a3b8] mb-2" style={{ fontSize: "0.75rem", fontFamily: "Orbitron, sans-serif" }}>Patterns detectes par zxcvbn</p>
+                    <p className="text-[#94a3b8] mb-2" style={{ fontSize: "0.75rem", fontFamily: "Orbitron, sans-serif" }}>Patterns détectés par zxcvbn</p>
                     <div className="space-y-1.5">
                       {analysis.sequence.map((match: any, i: number) => (
                         <div key={i} className="flex items-center gap-2 flex-wrap">
@@ -358,7 +358,7 @@ export function PasswordGenerator() {
                           <span className="text-[#94a3b8]" style={{ fontSize: "0.72rem" }}>
                             {translatePattern(match.pattern)}
                             {match.dictionary_name ? ` (${translateDictName(match.dictionary_name)})` : ""}
-                            {match.pattern === "date" && match.year ? ` — annee ${match.year}` : ""}
+                            {match.pattern === "date" && match.year ? ` — année ${match.year}` : ""}
                           </span>
                         </div>
                       ))}
@@ -388,10 +388,10 @@ export function PasswordGenerator() {
                 <div className="flex items-start gap-2">
                   <Info className="w-3 h-3 text-[#4a5568] flex-shrink-0 mt-0.5" />
                   <p className="text-[#4a5568]" style={{ fontSize: "0.65rem", lineHeight: 1.5 }}>
-                    Estimations basees sur l'algorithme open source <strong>zxcvbn</strong> (cree par Dropbox),
+                    Estimations basées sur l'algorithme open source <strong>zxcvbn</strong> (créé par Dropbox),
                     en supposant une attaque par force brute sans limitation de tentatives ni protections
-                    supplementaires (MFA, verrouillage de compte, etc.). Ces valeurs sont indicatives et ne
-                    remplacent pas les politiques de securite de votre organisation.
+                    supplémentaires (MFA, verrouillage de compte, etc.). Ces valeurs sont indicatives et ne
+                    remplacent pas les politiques de sécurité de votre organisation.
                   </p>
                 </div>
               </motion.div>
@@ -403,7 +403,7 @@ export function PasswordGenerator() {
         <div className="bg-[#111827] border border-[#00d4ff]/10 rounded-xl p-6 mb-6">
           <div className="flex items-center gap-2 mb-5">
             <RefreshCw className="w-5 h-5 text-[#00d4ff]" />
-            <h2 className="text-[#e2e8f0]" style={{ fontFamily: "Orbitron, sans-serif", fontSize: "0.95rem" }}>Generer un mot de passe</h2>
+            <h2 className="text-[#e2e8f0]" style={{ fontFamily: "Orbitron, sans-serif", fontSize: "0.95rem" }}>Générer un mot de passe</h2>
           </div>
 
           <div className="flex items-center gap-3 mb-5">
@@ -482,7 +482,7 @@ export function PasswordGenerator() {
               style={{ fontSize: "0.8rem", border: "1px solid rgba(0,212,255,0.15)" }}
             >
               <Search className="w-3.5 h-3.5" />
-              Analyser ce mot de passe en detail
+              Analyser ce mot de passe en détail
             </button>
           )}
         </div>

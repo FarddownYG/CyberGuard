@@ -24,7 +24,7 @@ async function vtFetch(path: string, options: RequestInit = {}): Promise<any> {
   const apiKey = getApiKey();
   if (!apiKey) {
     throw new VTError(
-      "Cle API VirusTotal non configuree. Ajoutez VITE_VIRUSTOTAL_API_KEY dans vos variables d'environnement Vercel.",
+      "Clé API VirusTotal non configurée. Ajoutez VITE_VIRUSTOTAL_API_KEY dans vos variables d'environnement Vercel.",
       "NO_API_KEY"
     );
   }
@@ -139,7 +139,7 @@ export async function pollAnalysis(
     await new Promise((r) => setTimeout(r, 15_000));
   }
 
-  throw new VTError("Analyse trop longue. Reessayez plus tard.", "TIMEOUT");
+  throw new VTError("Analyse trop longue. Réessayez plus tard.", "TIMEOUT");
 }
 
 // ─── URL Analysis Full Flow ──────────────────────────────────────────────
