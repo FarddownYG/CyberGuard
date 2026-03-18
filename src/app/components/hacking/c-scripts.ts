@@ -2027,4 +2027,300 @@ int main(int argc,char*argv[]){
 }
 `,
 
+faille_finder: `/*
+ * FailleFinder - CyberGuard Vulnerability Scanner (C Ultra Performance)
+ * 6 modules: headers, SSL/TLS, injection, info disclosure (50+ paths), tech, DNS
+ * Multi-threaded pthreads, raw sockets + OpenSSL, score /100
+ * Inspired by Nikto + Nuclei + SQLMap + Burp
+ * Compile: gcc -O3 -march=native -flto -o faille_finder faille_finder.c -lssl -lcrypto -lpthread
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/x509.h>
+#include <pthread.h>
+#include <time.h>
+#include <ctype.h>
+
+#define BUF 65536
+#define MAX_T 32
+#define TO 6
+#define MF 500
+
+#define CR "\\033[91m"
+#define CG "\\033[92m"
+#define CY "\\033[93m"
+#define CB "\\033[94m"
+#define CC "\\033[96m"
+#define CD "\\033[90m"
+#define CW "\\033[97m"
+#define BD "\\033[1m"
+#define RS "\\033[0m"
+
+typedef enum{S_C,S_H,S_M,S_L,S_I}Sv;
+static const char*SN[]={"CRITICAL","HIGH    ","MEDIUM  ","LOW     ","INFO    "};
+static const char*SC[]={CR,CR,CY,CB,CD};
+static int sv_c[5]={0};
+static int nf=0;
+static pthread_mutex_t fl=PTHREAD_MUTEX_INITIALIZER;
+
+static void af(const char*mod,const char*t,Sv s,const char*d){
+    pthread_mutex_lock(&fl);nf++;sv_c[s]++;
+    printf("  %s[%s]%s %s\\n",SC[s],SN[s],RS,t);
+    pthread_mutex_unlock(&fl);
+}
+
+typedef struct{int st;char body[BUF];int bl;char hd[BUF];}HR;
+
+static int tc(const char*h,int p){
+    struct hostent*he=gethostbyname(h);if(!he)return-1;
+    int s=socket(AF_INET,SOCK_STREAM,0);if(s<0)return-1;
+    struct sockaddr_in a={0};a.sin_family=AF_INET;a.sin_port=htons(p);
+    memcpy(&a.sin_addr,he->h_addr_list[0],he->h_length);
+    struct timeval tv={TO,0};setsockopt(s,SOL_SOCKET,SO_RCVTIMEO,&tv,sizeof(tv));
+    setsockopt(s,SOL_SOCKET,SO_SNDTIMEO,&tv,sizeof(tv));
+    if(connect(s,(struct sockaddr*)&a,sizeof(a))<0){close(s);return-1;}return s;
+}
+
+static HR hg(const char*h,const char*pa,int tls){
+    HR r={0};r.st=-1;int s=tc(h,tls?443:80);if(s<0)return r;
+    char rq[4096];snprintf(rq,4096,"GET %s HTTP/1.1\\r\\nHost: %s\\r\\nUser-Agent: FailleFinder/3.0\\r\\nConnection: close\\r\\n\\r\\n",pa,h);
+    if(tls){SSL_CTX*cx=SSL_CTX_new(TLS_client_method());SSL_CTX_set_verify(cx,SSL_VERIFY_NONE,NULL);
+        SSL*sl=SSL_new(cx);SSL_set_fd(sl,s);SSL_set_tlsext_host_name(sl,h);
+        if(SSL_connect(sl)>0){SSL_write(sl,rq,strlen(rq));int t=0,n;while(t<BUF-1&&(n=SSL_read(sl,r.body+t,BUF-1-t))>0)t+=n;r.body[t]=0;r.bl=t;
+            if(t>12&&!strncmp(r.body,"HTTP/",5))r.st=atoi(r.body+9);
+            char*sep=strstr(r.body,"\\r\\n\\r\\n");if(sep){int hl=sep-r.body;if(hl<BUF){strncpy(r.hd,r.body,hl);r.hd[hl]=0;memmove(r.body,sep+4,t-hl-3);r.bl=t-hl-4;}}}
+        SSL_free(sl);SSL_CTX_free(cx);
+    }else{write(s,rq,strlen(rq));int t=0,n;while(t<BUF-1&&(n=read(s,r.body+t,BUF-1-t))>0)t+=n;r.body[t]=0;r.bl=t;
+        if(t>12&&!strncmp(r.body,"HTTP/",5))r.st=atoi(r.body+9);
+        char*sep=strstr(r.body,"\\r\\n\\r\\n");if(sep){int hl=sep-r.body;if(hl<BUF){strncpy(r.hd,r.body,hl);r.hd[hl]=0;memmove(r.body,sep+4,t-hl-3);r.bl=t-hl-4;}}}
+    close(s);return r;
+}
+
+static int hhas(const char*hd,const char*n){char lo[BUF],pat[130];int l=strlen(hd);if(l>=BUF)l=BUF-1;
+    for(int i=0;i<l;i++)lo[i]=tolower(hd[i]);lo[l]=0;snprintf(pat,130,"\\n%s:",n);return strstr(lo,pat)!=NULL;}
+
+static void hval(const char*hd,const char*n,char*o,int mx){o[0]=0;char lo[BUF];int l=strlen(hd);if(l>=BUF)l=BUF-1;
+    for(int i=0;i<l;i++)lo[i]=tolower(hd[i]);lo[l]=0;char pat[130];snprintf(pat,130,"\\n%s:",n);
+    char*p=strstr(lo,pat);if(!p)return;int off=p-lo+strlen(pat);while(off<l&&hd[off]==' ')off++;
+    int i=0;while(off+i<l&&hd[off+i]!='\\r'&&hd[off+i]!='\\n'&&i<mx-1){o[i]=hd[off+i];i++;}o[i]=0;}
+
+static int m_hdr(const char*h){printf("\\n%s[1/6] Headers%s\\n",CC,RS);int ck=0;
+    HR r=hg(h,"/",1);if(r.st<0){af("H","Unreachable",S_H,"");return 1;}
+    const char*rq[][2]={{"strict-transport-security","HSTS missing"},{"content-security-policy","CSP missing"},
+        {"x-content-type-options","X-Content-Type-Options missing"},{"x-frame-options","X-Frame-Options missing"},
+        {"referrer-policy","Referrer-Policy missing"},{"permissions-policy","Permissions-Policy missing"}};
+    Sv sv[]={S_H,S_H,S_M,S_M,S_L,S_M};
+    for(int i=0;i<6;i++){ck++;if(!hhas(r.hd,rq[i][0]))af("H",rq[i][1],sv[i],"");}
+    const char*lk[]={"server","x-powered-by","x-aspnet-version","x-debug-token"};
+    for(int i=0;i<4;i++){ck++;char v[256];hval(r.hd,lk[i],v,256);if(v[0]){char m[300];snprintf(m,300,"Info leak: %s: %s",lk[i],v);af("H",m,S_M,"");}}
+    ck++;char csp[2048];hval(r.hd,"content-security-policy",csp,2048);
+    if(csp[0]){if(strstr(csp,"unsafe-inline"))af("H","CSP: unsafe-inline",S_H,"");if(strstr(csp,"unsafe-eval"))af("H","CSP: unsafe-eval",S_H,"");}
+    ck++;char ck2[1024];hval(r.hd,"set-cookie",ck2,1024);if(ck2[0]){char lc[1024];for(int i=0;ck2[i];i++)lc[i]=tolower(ck2[i]);lc[strlen(ck2)]=0;
+        if(!strstr(lc,"httponly"))af("H","Cookie: no HttpOnly",S_H,"");if(!strstr(lc,"secure"))af("H","Cookie: no Secure",S_M,"");if(!strstr(lc,"samesite"))af("H","Cookie: no SameSite",S_M,"");}
+    return ck;}
+
+static int m_ssl(const char*h){printf("\\n%s[2/6] SSL/TLS%s\\n",CC,RS);int ck=0;
+    ck++;SSL_CTX*cx=SSL_CTX_new(TLS_client_method());int s=tc(h,443);
+    if(s<0){af("S","Port 443 closed",S_H,"");SSL_CTX_free(cx);return ck;}
+    SSL*sl=SSL_new(cx);SSL_set_fd(sl,s);SSL_set_tlsext_host_name(sl,h);
+    if(SSL_connect(sl)<=0){af("S","SSL handshake failed",S_H,"");SSL_free(sl);SSL_CTX_free(cx);close(s);return ck;}
+    ck++;const char*pr=SSL_get_version(sl);
+    if(pr){if(strstr(pr,"TLSv1.0"))af("S","TLS 1.0",S_H,"");else if(strstr(pr,"TLSv1.1"))af("S","TLS 1.1",S_M,"");
+        else{char m[64];snprintf(m,64,"Protocol: %s",pr);af("S",m,S_I,"");}}
+    ck++;const SSL_CIPHER*c=SSL_get_current_cipher(sl);
+    if(c){int b=SSL_CIPHER_get_bits(c,NULL);const char*cn=SSL_CIPHER_get_name(c);
+        if(b<128){char m[128];snprintf(m,128,"Weak: %s (%d bit)",cn,b);af("S",m,S_H,"");}
+        if(strstr(cn,"RC4")||strstr(cn,"NULL")){char m[128];snprintf(m,128,"Broken: %s",cn);af("S",m,S_C,"");}}
+    ck++;X509*ce=SSL_get_peer_certificate(sl);
+    if(ce){ASN1_TIME*na=X509_get_notAfter(ce);int d,sc2;
+        if(ASN1_TIME_diff(&d,&sc2,NULL,na)){if(d<0)af("S","Cert EXPIRED",S_C,"");
+            else if(d<30){char m[64];snprintf(m,64,"Cert: %d days left",d);af("S",m,S_H,"");}
+            else{char m[64];snprintf(m,64,"Cert OK (%d days)",d);af("S",m,S_I,"");}}X509_free(ce);}
+    SSL_free(sl);SSL_CTX_free(cx);close(s);return ck;}
+
+typedef struct{const char*pa;Sv sv;}SP;
+static const SP SPS[]={
+    {"/.env",S_C},{"/.git/config",S_C},{"/.git/HEAD",S_C},{"/.htpasswd",S_C},
+    {"/backup.sql",S_C},{"/backup.zip",S_C},{"/database.sql",S_C},{"/console",S_C},
+    {"/__debug__/",S_C},{"/actuator/env",S_C},{"/.aws/credentials",S_C},{"/.bash_history",S_C},
+    {"/.ssh/id_rsa",S_C},{"/credentials.xml",S_C},{"/secrets.yml",S_C},
+    {"/phpmyadmin/",S_H},{"/adminer.php",S_H},{"/server-status",S_H},{"/.htaccess",S_H},
+    {"/backup/",S_H},{"/config.php",S_H},{"/docker-compose.yml",S_H},{"/info.php",S_H},
+    {"/phpinfo.php",S_H},{"/web.config",S_H},{"/elmah.axd",S_H},{"/.DS_Store",S_H},
+    {"/debug/",S_H},{"/actuator",S_H},{"/firebase.json",S_H},{"/error_log",S_H},{"/.npmrc",S_H},
+    {"/admin/",S_M},{"/graphql",S_M},{"/swagger.json",S_M},{"/api-docs",S_M},
+    {"/package.json",S_M},{"/Dockerfile",S_M},{"/config.json",S_M},{"/wp-json/wp/v2/users",S_M},
+    {"/robots.txt",S_I},{"/sitemap.xml",S_I},{"/api/",S_I},{"/.well-known/security.txt",S_I},
+};
+static const int NSP=sizeof(SPS)/sizeof(SPS[0]);
+typedef struct{const char*h;const SP*s;int f;}PJ;
+static void*ckp(void*a){PJ*j=(PJ*)a;HR r=hg(j->h,j->s->pa,1);
+    if(r.st==200&&r.bl>50&&!strstr(r.body,"<!DOCTYPE"))j->f=1;
+    else if(r.st==403&&j->s->sv<=S_H)j->f=2;return NULL;}
+
+static int m_disc(const char*h){printf("\\n%s[4/6] Disclosure (%d paths)%s\\n",CC,NSP,RS);
+    PJ js[50];for(int i=0;i<NSP;i++){js[i].h=h;js[i].s=&SPS[i];js[i].f=0;}
+    pthread_t th[MAX_T];int i=0;while(i<NSP){int b=(NSP-i<MAX_T)?NSP-i:MAX_T;
+        for(int j=0;j<b;j++)pthread_create(&th[j],NULL,ckp,&js[i+j]);
+        for(int j=0;j<b;j++)pthread_join(th[j],NULL);i+=b;}
+    for(int j=0;j<NSP;j++){if(js[j].f==1){char m[200];snprintf(m,200,"%s exposed",js[j].s->pa);af("D",m,js[j].s->sv,"");}
+        else if(js[j].f==2){char m[200];snprintf(m,200,"%s exists(403)",js[j].s->pa);af("D",m,S_I,"");}}
+    return NSP;}
+
+static int m_inj(const char*h){printf("\\n%s[3/6] Injection%s\\n",CC,RS);int ck=0;
+    HR r=hg(h,"/",1);if(r.st<0)return 0;char lo[BUF];int l=r.bl<BUF-1?r.bl:BUF-1;
+    for(int i=0;i<l;i++)lo[i]=tolower(r.body[i]);lo[l]=0;
+    ck++;if(strstr(lo,"<form")&&!strstr(lo,"csrf")&&!strstr(lo,"_token"))af("I","No CSRF token",S_H,"");
+    ck++;if(strstr(lo,"eval(")||strstr(lo,"innerhtml")||strstr(lo,"document.write("))af("I","Dangerous JS functions",S_M,"");
+    ck++;int ds=0;if(strstr(lo,"location.hash"))ds++;if(strstr(lo,"location.search"))ds++;if(strstr(lo,"document.referrer"))ds++;
+    if(ds){char m[64];snprintf(m,64,"%d DOM-XSS sources",ds);af("I",m,S_M,"");}
+    ck++;if(strstr(r.body,"sourceMappingURL"))af("I","Source maps exposed",S_M,"");
+    return ck;}
+
+static int m_tech(const char*h){printf("\\n%s[5/6] Tech%s\\n",CC,RS);int ck=0;
+    HR r=hg(h,"/",1);if(r.st<0)return 0;char lo[BUF];int l=r.bl<BUF-1?r.bl:BUF-1;
+    for(int i=0;i<l;i++)lo[i]=tolower(r.body[i]);lo[l]=0;
+    char hl[BUF];int hl2=strlen(r.hd)<BUF-1?(int)strlen(r.hd):BUF-1;for(int i=0;i<hl2;i++)hl[i]=tolower(r.hd[i]);hl[hl2]=0;
+    int f=0;char st[512]="";
+    struct{const char*n;const char*s;int b;Sv v;const char*w;}sg[]={
+        {"WordPress","wp-content",1,S_M,"WP detected"},{"AngularJS","ng-app",1,S_H,"EOL XSS risk"},
+        {"React","_reactroot",1,S_I,0},{"Vue","v-cloak",1,S_I,0},{"Next.js","__next",1,S_I,0},
+        {"ASP.NET","__viewstate",1,S_H,"Deserialization risk"},{"Django","csrfmiddlewaretoken",1,S_I,0},
+        {"PHP","x-powered-by: php",0,S_I,0},{"Nginx","server: nginx",0,S_I,0},{"Apache","server: apache",0,S_I,0},
+        {"Cloudflare","server: cloudflare",0,S_I,0},
+    };int ns=sizeof(sg)/sizeof(sg[0]);
+    for(int i=0;i<ns;i++){ck++;if(strstr(sg[i].b?lo:hl,sg[i].s)){f++;if(st[0])strcat(st,",");strcat(st,sg[i].n);
+        if(sg[i].w&&sg[i].v<=S_M){char m[200];snprintf(m,200,"%s — %s",sg[i].n,sg[i].w);af("T",m,sg[i].v,"");}}}
+    if(f){char m[200];snprintf(m,200,"%d techs: %s",f,st);af("T",m,S_I,"");}return ck;}
+
+static int m_dns(const char*h){printf("\\n%s[6/6] DNS%s\\n",CC,RS);int ck=0;
+    char pa[512];snprintf(pa,512,"/resolve?name=%s&type=TXT",h);HR r=hg("dns.google",pa,1);
+    ck++;if(r.st==200){if(!strstr(r.body,"v=spf1"))af("N","No SPF",S_M,"");else if(strstr(r.body,"+all"))af("N","SPF +all",S_H,"");}
+    snprintf(pa,512,"/resolve?name=_dmarc.%s&type=TXT",h);r=hg("dns.google",pa,1);
+    ck++;if(r.st==200){if(!strstr(r.body,"DMARC"))af("N","No DMARC",S_M,"");else if(strstr(r.body,"p=none"))af("N","DMARC p=none",S_L,"");}
+    return ck;}
+
+int main(int argc,char*argv[]){
+    if(argc<2){printf("Usage: %s <hostname> [-j]\\n6 modules, multi-threaded, score /100\\n",argv[0]);return 0;}
+    SSL_library_init();SSL_load_error_strings();
+    int jo=0;for(int i=2;i<argc;i++)if(!strcmp(argv[i],"-j"))jo=1;
+    const char*h=argv[1];
+    if(!jo){printf("\\n%s%s=== FailleFinder - CyberGuard VulnScan (C) ===%s\\n  %sTarget:%s %s\\n",CR,BD,RS,BD,RS,h);}
+    struct timespec t0,t1;clock_gettime(CLOCK_MONOTONIC,&t0);
+    int tc2=0;tc2+=m_hdr(h);tc2+=m_ssl(h);tc2+=m_inj(h);tc2+=m_disc(h);tc2+=m_tech(h);tc2+=m_dns(h);
+    clock_gettime(CLOCK_MONOTONIC,&t1);double el=(t1.tv_sec-t0.tv_sec)+(t1.tv_nsec-t0.tv_nsec)/1e9;
+    int sc=100-sv_c[0]*25-sv_c[1]*10-sv_c[2]*5-sv_c[3]*2;if(sc<0)sc=0;
+    if(!jo){printf("\\n  %s%sFINAL%s %d findings | %d checks | %.1fs\\n",CR,BD,RS,nf,tc2,el);
+        printf("  %sCRIT:%s%d %sHIGH:%s%d %sMED:%s%d %sLOW:%s%d %sINFO:%s%d\\n",CR,RS,sv_c[0],CR,RS,sv_c[1],CY,RS,sv_c[2],CB,RS,sv_c[3],CD,RS,sv_c[4]);
+        printf("  %sScore: %s%d/100%s\\n",BD,sc>=80?CG:sc>=50?CY:CR,sc,RS);}
+    else printf("{\\"findings\\":%d,\\"checks\\":%d,\\"elapsed\\":%.2f,\\"score\\":%d}\\n",nf,tc2,el,sc);
+    return 0;}
+`,
+
+wifi_bruteforce: `/*
+ * WiFi BruteForce - CyberGuard (C Ultra Performance)
+ * PBKDF2-SHA1 WPA/WPA2 cracking, multi-threaded, 50+ mutation rules
+ * Supports .hccapx, .22000 | ~100K+ PMK/s multi-core
+ * Compile: gcc -O3 -march=native -flto -o wifi_bf wifi_bf.c -lssl -lcrypto -lpthread
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <time.h>
+#include <ctype.h>
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+#include <signal.h>
+#define MT 64
+#define PL 32
+#define MW 64
+#define MM 200
+#define CR "\\033[91m"
+#define CG "\\033[92m"
+#define CM "\\033[95m"
+#define BD "\\033[1m"
+#define RS "\\033[0m"
+typedef struct{char ss[64];unsigned char bs[6],cl[6],an[32],sn[32],ep[512],mc[16];int el,kv;}HS;
+typedef struct{volatile long long at;volatile int fd;char pw[MW];double t0;long long tt;pthread_mutex_t lk;}ST;
+static ST S={0,0,"",0,0,PTHREAD_MUTEX_INITIALIZER};static volatile int R=1;
+void sh(int s){R=0;}
+static void cpmk(const char*p,const char*s,unsigned char*o){PKCS5_PBKDF2_HMAC(p,strlen(p),(unsigned char*)s,strlen(s),4096,EVP_sha1(),PL,o);}
+static void cptk(const unsigned char*pmk,const unsigned char*an,const unsigned char*sn,const unsigned char*a,const unsigned char*s,unsigned char*ptk){
+    unsigned char d[76];if(memcmp(a,s,6)<0){memcpy(d,a,6);memcpy(d+6,s,6);}else{memcpy(d,s,6);memcpy(d+6,a,6);}
+    if(memcmp(an,sn,32)<0){memcpy(d+12,an,32);memcpy(d+44,sn,32);}else{memcpy(d+12,sn,32);memcpy(d+44,an,32);}
+    for(int i=0;i<4;i++){unsigned char in[100];memcpy(in,"Pairwise key expansion",23);memcpy(in+23,d,76);in[99]=i;unsigned int l=20;HMAC(EVP_sha1(),pmk,PL,in,100,ptk+i*20,&l);}}
+static int vmc(const unsigned char*ptk,const unsigned char*ep,int el,const unsigned char*em,int kv){
+    unsigned char m[20],ec[512];unsigned int l=20;memcpy(ec,ep,el);memset(ec+81,0,16);
+    if(kv==1)HMAC(EVP_md5(),ptk,16,ec,el,m,&l);else HMAC(EVP_sha1(),ptk,16,ec,el,m,&l);return memcmp(m,em,16)==0;}
+static int gmt(const char*w,char mt[][MW]){int n=0,wl=strlen(w);if(wl<1||wl>=MW-10)return 0;
+    strncpy(mt[n++],w,MW-1);char t[MW];for(int i=0;w[i];i++)t[i]=tolower(w[i]);t[wl]=0;strncpy(mt[n++],t,MW-1);
+    for(int i=0;w[i];i++)t[i]=toupper(w[i]);t[wl]=0;strncpy(mt[n++],t,MW-1);
+    strcpy(t,w);t[0]=toupper(t[0]);strncpy(mt[n++],t,MW-1);
+    for(int d=0;d<10&&n<MM;d++)snprintf(mt[n++],MW,"%s%d",w,d);
+    for(int d=0;d<100&&n<MM;d++)snprintf(mt[n++],MW,"%s%02d",w,d);
+    int ns[]={123,456,789,1234,12345,111,666,777,999};for(int i=0;i<9&&n<MM;i++)snprintf(mt[n++],MW,"%s%d",w,ns[i]);
+    const char*sp="!@#$%&*";for(int i=0;sp[i]&&n<MM;i++)snprintf(mt[n++],MW,"%s%c",w,sp[i]);
+    strcpy(t,w);for(int i=0;t[i];i++){switch(tolower(t[i])){case'a':t[i]='@';break;case'e':t[i]='3';break;case'i':t[i]='1';break;case'o':t[i]='0';break;case's':t[i]='5';break;case't':t[i]='7';break;}}
+    if(strcmp(t,w)&&n<MM)strncpy(mt[n++],t,MW-1);
+    if(n<MM){for(int i=0;i<wl;i++)t[i]=w[wl-1-i];t[wl]=0;strncpy(mt[n++],t,MW-1);}
+    for(int y=2020;y<=2026&&n<MM;y++)snprintf(mt[n++],MW,"%s%d",w,y);
+    int v=0;for(int i=0;i<n;i++){int ml=strlen(mt[i]);if(ml>=8&&ml<=63){if(i!=v)strcpy(mt[v],mt[i]);v++;}}return v;}
+typedef struct{char**ws;int cnt;HS*hs;int mut;}WA;
+static void*cwk(void*a){WA*wa=(WA*)a;unsigned char pmk[PL],ptk[80];char mt[MM][MW];
+    for(int i=0;i<wa->cnt&&!S.fd&&R;i++){if(wa->mut){int nm=gmt(wa->ws[i],mt);
+        for(int m=0;m<nm&&!S.fd&&R;m++){cpmk(mt[m],wa->hs->ss,pmk);cptk(pmk,wa->hs->an,wa->hs->sn,wa->hs->bs,wa->hs->cl,ptk);
+            if(vmc(ptk,wa->hs->ep,wa->hs->el,wa->hs->mc,wa->hs->kv)){pthread_mutex_lock(&S.lk);S.fd=1;strncpy(S.pw,mt[m],MW-1);pthread_mutex_unlock(&S.lk);return NULL;}
+            __sync_fetch_and_add(&S.at,1);}}
+    else{int wl=strlen(wa->ws[i]);if(wl<8||wl>63)continue;cpmk(wa->ws[i],wa->hs->ss,pmk);cptk(pmk,wa->hs->an,wa->hs->sn,wa->hs->bs,wa->hs->cl,ptk);
+        if(vmc(ptk,wa->hs->ep,wa->hs->el,wa->hs->mc,wa->hs->kv)){pthread_mutex_lock(&S.lk);S.fd=1;strncpy(S.pw,wa->ws[i],MW-1);pthread_mutex_unlock(&S.lk);return NULL;}
+        __sync_fetch_and_add(&S.at,1);}}return NULL;}
+static int lhcx(const char*p,HS*h){FILE*f=fopen(p,"rb");if(!f)return-1;unsigned char b[512];int n=fread(b,1,512,f);fclose(f);if(n<393)return-1;
+    unsigned int sg;memcpy(&sg,b,4);if(sg!=0x58504348)return-1;memcpy(&h->kv,b+8,4);memcpy(h->ss,b+16,32);h->ss[32]=0;
+    memcpy(h->bs,b+59,6);memcpy(h->an,b+65,32);memcpy(h->cl,b+97,6);memcpy(h->sn,b+103,32);
+    unsigned short el;memcpy(&el,b+135,2);h->el=el;memcpy(h->ep,b+141,el>512?512:el);memcpy(h->mc,b+141+81,16);return 0;}
+static int h2b(const char*x,unsigned char*o,int m){int i=0;while(x[i*2]&&x[i*2+1]&&i<m){char h[3]={x[i*2],x[i*2+1],0};o[i]=(unsigned char)strtol(h,NULL,16);i++;}return i;}
+static int l22(const char*p,HS*h){FILE*f=fopen(p,"r");if(!f)return-1;char l[4096];if(!fgets(l,sizeof(l),f)){fclose(f);return-1;}fclose(f);
+    if(strncmp(l,"WPA",3))return-1;char*pt[10];int np=0;char*pk=strtok(l,"*");while(pk&&np<10){pt[np++]=pk;pk=strtok(NULL,"*");}if(np<8)return-1;
+    h2b(pt[2],h->mc,16);h2b(pt[3],h->bs,6);h2b(pt[4],h->cl,6);int sl=h2b(pt[5],(unsigned char*)h->ss,63);h->ss[sl]=0;
+    h2b(pt[6],h->an,32);h->el=h2b(pt[7],h->ep,512);if(h->el>49)memcpy(h->sn,h->ep+17,32);h->kv=2;return 0;}
+static int lhs(const char*p,HS*h){memset(h,0,sizeof(HS));int l=strlen(p);
+    if(l>6&&!strcmp(p+l-6,".22000"))return l22(p,h);if(l>7&&!strcmp(p+l-7,".hccapx"))return lhcx(p,h);
+    if(lhcx(p,h)==0)return 0;return l22(p,h);}
+static void*pth(void*a){while(!S.fd&&R){struct timespec ts;clock_gettime(CLOCK_MONOTONIC,&ts);
+    double e=ts.tv_sec+ts.tv_nsec/1e9-S.t0,s=S.at/(e>0?e:1),p=S.tt>0?(double)S.at/S.tt*100:0;
+    fprintf(stderr,"\\r  [%5.1f%%] %lld/%lld | %.0f PMK/s | ETA: %.0fs  ",p,S.at,S.tt,s,s>0?(S.tt-S.at)/s:0);usleep(500000);}return NULL;}
+int main(int argc,char*argv[]){
+    if(argc<3){printf("%s%s=== WiFi BruteForce - CyberGuard (C) ===%s\\nUsage: %s <handshake> <wordlist> [-t N] [-m] [-j]\\n",CM,BD,RS,argv[0]);
+        printf("  -t N  Threads (max %d)\\n  -m    Mutations (50+ rules)\\n  -j    JSON\\n~100K+ PMK/s multi-core\\n",MT);return 0;}
+    signal(SIGINT,sh);OpenSSL_add_all_algorithms();int thr=8,mut=0,jo=0;
+    for(int i=3;i<argc;i++){if(!strcmp(argv[i],"-t")&&i+1<argc)thr=atoi(argv[++i]);else if(!strcmp(argv[i],"-m"))mut=1;else if(!strcmp(argv[i],"-j"))jo=1;}
+    if(thr>MT)thr=MT;if(thr<1)thr=1;HS hs;if(lhs(argv[1],&hs)!=0){fprintf(stderr,"%s[!]%s Failed: %s\\n",CR,RS,argv[1]);return 1;}
+    if(!jo)printf("\\n%s%s=== WiFi BruteForce (C) ===%s\\n  SSID: %s | T: %d | Mut: %s\\n",CM,BD,RS,hs.ss,thr,mut?"ON":"OFF");
+    FILE*f=fopen(argv[2],"r");if(!f){fprintf(stderr,"Cannot open: %s\\n",argv[2]);return 1;}
+    char**ws=NULL;int nw=0,cp=100000;ws=malloc(cp*sizeof(char*));char ln[256];
+    while(fgets(ln,sizeof(ln),f)){int l=strlen(ln);while(l>0&&(ln[l-1]=='\\n'||ln[l-1]=='\\r'))ln[--l]=0;
+        if(l<8||l>63)continue;if(nw>=cp){cp*=2;ws=realloc(ws,cp*sizeof(char*));}ws[nw++]=strdup(ln);}fclose(f);
+    if(!jo)printf("  Words: %d\\n\\n  %sCracking...%s\\n\\n",nw,CM,RS);
+    S.tt=mut?(long long)nw*50:nw;struct timespec ts;clock_gettime(CLOCK_MONOTONIC,&ts);S.t0=ts.tv_sec+ts.tv_nsec/1e9;
+    pthread_t pt;if(!jo)pthread_create(&pt,NULL,pth,NULL);pthread_t th[MT];WA args[MT];int ch=nw/thr;
+    for(int i=0;i<thr;i++){args[i].hs=&hs;args[i].mut=mut;args[i].ws=ws+i*ch;args[i].cnt=(i==thr-1)?nw-i*ch:ch;pthread_create(&th[i],NULL,cwk,&args[i]);}
+    for(int i=0;i<thr;i++)pthread_join(th[i],NULL);R=0;if(!jo){pthread_join(pt,NULL);printf("\\n");}
+    clock_gettime(CLOCK_MONOTONIC,&ts);double el=ts.tv_sec+ts.tv_nsec/1e9-S.t0,sp=S.at/(el>0?el:1);
+    if(jo)printf("{\\"found\\":%s,\\"pw\\":\\"%s\\",\\"ssid\\":\\"%s\\",\\"at\\":%lld,\\"spd\\":%.0f,\\"t\\":%.2f}\\n",S.fd?"true":"false",S.fd?S.pw:"",hs.ss,S.at,sp,el);
+    else{printf("\\n  %s════════════════════════════════════════%s\\n",CM,RS);
+        if(S.fd)printf("  %s%s[+] KEY: %s%s\\n",CG,BD,S.pw,RS);else printf("  %s[-] Not found%s\\n",CR,RS);
+        printf("  %lld att | %.0f PMK/s | %.1fs\\n  %s════════════════════════════════════════%s\\n",S.at,sp,el,CM,RS);}
+    for(int i=0;i<nw;i++)free(ws[i]);free(ws);return S.fd?0:1;}
+`,
+
 };

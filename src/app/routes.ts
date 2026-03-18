@@ -28,6 +28,8 @@ import { PortScannerPage } from "./components/hacking/PortScannerPage";
 import { RedirectCheckerPage } from "./components/hacking/RedirectCheckerPage";
 import { BruteForcePage } from "./components/hacking/BruteForcePage";
 import { DeductOScopePage } from "./components/hacking/DeductOScopePage";
+import { FailleFinderPage } from "./components/hacking/FailleFinderPage";
+import { WifiBruteForcePage } from "./components/hacking/WifiBruteForcePage";
 import { ToolCreatorPage } from "./components/hacking/ToolCreatorPage";
 import { DynamicToolPage } from "./components/hacking/DynamicToolPage";
 
@@ -65,6 +67,8 @@ export const router = createBrowserRouter([
       { path: "hacking-ethique/redirect-checker", Component: RedirectCheckerPage },
       { path: "hacking-ethique/brute-force", Component: BruteForcePage },
       { path: "hacking-ethique/deductoscope", Component: DeductOScopePage },
+      { path: "hacking-ethique/faille-finder", Component: FailleFinderPage },
+      { path: "hacking-ethique/wifi-bruteforce", Component: WifiBruteForcePage },
       { path: "hacking-ethique/add-tool", Component: ToolCreatorPage },
       { path: "hacking-ethique/custom/:slug", Component: DynamicToolPage },
       { path: "*", Component: HomePage },

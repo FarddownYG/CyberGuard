@@ -238,4 +238,35 @@ Le standard est : IMBATTABLE.
 
 ---
 
-*Doctrine Mahoraga v3 — Redigee une seule fois. Respectee pour toujours.*
+### ARTICLE 12 — INNOVATION PAR ABSORPTION (KALI MINDSET)
+
+Le systeme s'inspire activement des outils de reference de la communaute offensive
+(Kali Linux, Parrot OS, BlackArch, etc.) pour surpasser leur niveau :
+
+- **Absorption** : Etudier les techniques, payloads, signatures et algorithmes
+  des outils de reference (Nikto, Nmap, SQLMap, WPScan, Burp Suite, ffuf, Gobuster,
+  Amass, Subfinder, Nuclei, Metasploit, etc.) et les integrer dans nos propres outils.
+- **Amelioration** : Ne jamais copier betement — comprendre le POURQUOI de chaque
+  technique, puis l'implementer de maniere plus rapide, plus complete, plus robuste.
+- **Combinaison** : Fusionner des techniques de plusieurs outils dans un seul outil
+  unifie pour creer une synergie que les outils individuels ne peuvent pas atteindre.
+- **Innovation** : Inventer de nouvelles techniques en combinant des approches existantes
+  de maniere inedite (ex: fuzzing + machine learning, scan passif + actif simultane).
+
+Concretement :
+- Les payloads SQLi s'inspirent de SQLMap (time-based, union-based, boolean-blind, stacked, error-based)
+- Les signatures de technologies s'inspirent de Wappalyzer + WhatWeb + BuiltWith combines
+- Les scans de vulnerabilites s'inspirent de Nikto + Nuclei + OpenVAS combines
+- Les wordlists s'inspirent de SecLists + fuzzdb + PayloadsAllTheThings
+- Les techniques de contournement WAF s'inspirent des recherches de PortSwigger
+
+Le but : qu'un pentester professionnel qui utilise nos outils se dise
+"c'est MIEUX que ce que j'ai sur Kali".
+
+GARDE-FOU : L'innovation ne doit JAMAIS compromettre la stabilite du systeme.
+Chaque innovation est testee, isolee, et deployee progressivement.
+Si une innovation fait "tout peter", elle est revertee immediatement.
+
+---
+
+*Doctrine Mahoraga v3.1 — Enrichie par l'experience. Forgee par l'adaptation.*
