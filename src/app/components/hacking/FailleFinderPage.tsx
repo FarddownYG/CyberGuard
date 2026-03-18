@@ -1144,15 +1144,14 @@ def module_ssl(url):
 # ══════════════════════════════════════════════════════════════════════
 
 XSS_PAYLOADS = [
-    '<script>alert(1)</script>', "'\"><img src=x onerror=alert(1)>",
+    '<script>alert(1)</script>', "'\\"><img src=x onerror=alert(1)>",
     '<svg/onload=alert(1)>', '<body onload=alert(1)>',
     "javascript:alert(1)//", "'-alert(1)-'",
     '"><iframe src="javascript:alert(1)">', '<details open ontoggle=alert(1)>',
     '<math><mtext><table><mglyph><svg><mtext><textarea><path id="</textarea><img onerror=alert(1) src=1>">',
-    "{{7*7}}", "${7*7}", "#{7*7}", "<%= 7*7 %>",
+    "{{7*7}}", "\${7*7}", "#{7*7}", "<%= 7*7 %>",
     "{{constructor.constructor('return this')()}}",
     "%3Cscript%3Ealert(1)%3C/script%3E",
-    "\\"><script>alert(String.fromCharCode(88,83,83))</script>",
     "<img src=x onerror=prompt(1)>", "<svg><desc><![CDATA[</desc><script>alert(1)</script>]]>",
     "data:text/html,<script>alert(1)</script>",
 ]
@@ -1201,8 +1200,8 @@ def module_injection(url):
     checks += 1
     hiddens = re.findall(r'<input[^>]*type=["\\'"]hidden["\\'"][^>]*>', html, re.I)
     for h in hiddens:
-        name = re.search(r'name=["\\'"]([^"\\'"]+)', h)
-        value = re.search(r'value=["\\'"]([^"\\'"]+)', h)
+        name = re.search(r'name=["\\'"]([^"\\'"]+ )', h)
+        value = re.search(r'value=["\\'"]([^"\\'"]+ )', h)
         if name and value and re.search(r'password|secret|key|token|api', name.group(1), re.I) and len(value.group(1)) > 5:
             add_finding("Injection", "Donnees sensibles en hidden input", "high",
                 f'{name.group(1)}="{value.group(1)[:30]}..."', evidence=h[:200], cwe="CWE-200")
