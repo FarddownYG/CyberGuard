@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 const mainLinks = [
   { path: "/", label: "Accueil" },
-  { path: "/pentesting", label: "Pentesting" },
+  { path: "/hacking-ethique", label: "Hacking Éthique" },
   { path: "/virustotal", label: "VirusTotal" },
 ];
 

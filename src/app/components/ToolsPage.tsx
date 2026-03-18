@@ -5,9 +5,9 @@ import { motion } from "motion/react";
 const tools = [
   {
     icon: Shield,
-    title: "Pentesting Hub",
-    desc: "Pentest automatisé propulsé par Shannon AI. White-box analysis + exploitation dynamique réelle. Zéro faux positifs.",
-    link: "/pentesting",
+    title: "Hacking Éthique",
+    desc: "Une suite complète d'outils pour tester la sécurité d'un site web. Scanne les failles, analyse le code, et génère un rapport détaillé.",
+    link: "/hacking-ethique",
     color: "#00d4ff",
     glowClass: "glow-blue",
     tag: "Shannon AI",
@@ -16,7 +16,7 @@ const tools = [
   {
     icon: Eye,
     title: "Analyse VirusTotal",
-    desc: "Vérifiez si une URL est malveillante avec 70+ moteurs antivirus en simultané.",
+    desc: "Colle un lien et on vérifie s'il est dangereux avec plus de 70 antivirus en même temps. Tu sais tout de suite si c'est safe ou pas.",
     link: "/virustotal",
     color: "#8b5cf6",
     glowClass: "glow-purple",
@@ -26,7 +26,7 @@ const tools = [
   {
     icon: Lock,
     title: "SSL Checker",
-    desc: "Vérifiez la validité de votre certificat SSL, le protocole TLS et la force du chiffrement.",
+    desc: "Vérifie le petit cadenas d'un site web. On regarde si la connexion est bien chiffrée et si le certificat de sécurité est valide.",
     link: "/ssl-checker",
     color: "#39ff14",
     glowClass: "glow-green",
@@ -36,7 +36,7 @@ const tools = [
   {
     icon: Key,
     title: "Générateur de Mots de Passe",
-    desc: "Générez des mots de passe cryptographiquement sécurisés via Web Crypto API et vérifiez les fuites.",
+    desc: "Crée des mots de passe solides et aléatoires. Tu choisis la longueur, les caractères, et on te dit à quel point il est difficile à pirater.",
     link: "/tools/password",
     color: "#f59e0b",
     glowClass: "glow-amber",
@@ -46,7 +46,7 @@ const tools = [
   {
     icon: FileSearch,
     title: "Analyseur de Fichiers",
-    desc: "Calculez les hash MD5/SHA-256 puis scannez automatiquement vos fichiers avec VirusTotal.",
+    desc: "Examine un fichier pour savoir ce qu'il contient vraiment : type réel, empreinte unique (hash), et scan antivirus via VirusTotal.",
     link: "/tools/file-analyzer",
     color: "#ef4444",
     glowClass: "glow-red",
@@ -56,7 +56,7 @@ const tools = [
   {
     icon: Mail,
     title: "Vérificateur d'Email",
-    desc: "Collez un email complet : détection phishing, vérification des liens via VirusTotal, fautes d'orthographe.",
+    desc: "Colle un email suspect et on te dit si c'est du phishing. On vérifie les liens, l'expéditeur, et les signes d'arnaque.",
     link: "/tools/email-checker",
     color: "#06b6d4",
     glowClass: "glow-cyan",
@@ -66,7 +66,7 @@ const tools = [
   {
     icon: Globe,
     title: "DNS Security Check",
-    desc: "Vérifiez SPF, DKIM, DMARC, DNSSEC, HSTS et CAA de votre domaine.",
+    desc: "Vérifie si un nom de domaine est bien protégé contre le spam et l'usurpation d'identité. On regarde les réglages anti-fraude (SPF, DKIM, DMARC).",
     link: "/tools/dns-checker",
     color: "#ec4899",
     glowClass: "glow-pink",

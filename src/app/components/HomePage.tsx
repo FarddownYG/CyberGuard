@@ -44,7 +44,7 @@ function useInView(ref: React.RefObject<HTMLElement | null>, opts?: { once?: boo
 
 // ─── Features ────────────────────────────────────────────────────────────
 const features = [
-  { icon: Search, title: "Pentesting", desc: "Pentest automatisé propulsé par Shannon AI — analyse white-box + exploitation dynamique réelle.", link: "/pentesting", color: "#00d4ff", tag: "Pentest" },
+  { icon: Search, title: "Hacking Éthique", desc: "Pentest automatisé propulsé par Shannon AI — analyse white-box + exploitation dynamique réelle.", link: "/hacking-ethique", color: "#00d4ff", tag: "Pentest" },
   { icon: Eye, title: "Analyse VirusTotal", desc: "Vérifiez si une URL est malveillante avec 70+ moteurs antivirus en simultané.", link: "/virustotal", color: "#8b5cf6", tag: "URL Scan" },
   { icon: Lock, title: "SSL Checker", desc: "Testez la validité de votre certificat SSL et la sécurité de vos connexions HTTPS.", link: "/ssl-checker", color: "#39ff14", tag: "Certificat" },
   { icon: Key, title: "Générateur de Mots de Passe", desc: "Créez des mots de passe cryptographiquement sécurisés avec Web Crypto API.", link: "/tools/password", color: "#f59e0b", tag: "Password" },
@@ -303,7 +303,7 @@ function DesktopHeroBackground() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═════════════════��═════════════════════════════════════════════════════════
 // ─── MAIN HOMEPAGE ───────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════
 export function HomePage() {
@@ -384,7 +384,7 @@ export function HomePage() {
                 className="flex flex-col sm:flex-row gap-3 sm:gap-4"
               >
                 <Link
-                  to="/pentesting"
+                  to="/hacking-ethique"
                   className="group inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,212,255,0.4)] relative overflow-hidden"
                   style={{
                     background: "linear-gradient(135deg, #00d4ff, #0091b3)",
@@ -716,7 +716,7 @@ export function HomePage() {
               Lancez votre premier scan en moins de 30 secondes. Aucune inscription requise.
             </p>
             <Link
-              to="/pentesting"
+              to="/hacking-ethique"
               className="group inline-flex items-center gap-2.5 px-8 py-4 rounded-xl transition-all duration-300 hover:shadow-[0_0_50px_rgba(0,212,255,0.4)] relative overflow-hidden"
               style={{
                 background: "linear-gradient(135deg, #00d4ff, #0091b3)",

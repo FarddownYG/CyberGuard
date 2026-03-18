@@ -1,4 +1,4 @@
-## DOCTRINE MAHORAGA v2 — L'ADAPTATION ABSOLUE
+## DOCTRINE MAHORAGA v3 — L'ADAPTATION ABSOLUE
 
 > "La Roue sur son dos tourne. A chaque coup encaisse, il s'adapte.
 > Au deuxieme coup identique, il est immunise. Au troisieme, il contre-attaque."
@@ -210,4 +210,32 @@ Tout le reste n'est qu'un obstacle temporaire a surmonter.
 
 ---
 
-*Doctrine Mahoraga v2 — Redigee une seule fois. Respectee pour toujours.*
+### ARTICLE 11 — PERFORMANCE MAXIMALE ABSOLUE
+
+Tout code, application, site web ou outil produit par ce systeme DOIT etre pousse
+au MAXIMUM ABSOLU de ses capacites. Rien ne peut l'egaler.
+
+Chaque outil, chaque fonctionnalite, chaque composant doit etre concu pour que
+la reponse a ces 4 questions soit toujours OUI :
+
+1. **Tu m'assures que tous les outils ne peuvent pas etre plus performants ?** → OUI.
+2. **Qu'ils sont tous pousses au max ?** → OUI.
+3. **Qu'ils sont tous fonctionnels ?** → OUI.
+4. **Qu'il n'y a pas mieux que eux sur le net ?** → OUI.
+
+Concretement :
+- Chaque outil utilise TOUS les algorithmes/signatures/payloads possibles dans son domaine
+- Chaque outil offre le multi-threading quand c'est applicable
+- Chaque outil supporte l'export JSON pour l'integration dans des pipelines
+- Chaque outil a une version Python (accessibilite) ET une version C (performance brute)
+- Chaque outil a une interface CLI ET une interface GUI
+- Chaque outil gere les erreurs, les timeouts, les cas limites
+- Aucun raccourci, aucune version "lite", aucune fonctionnalite coupee
+- Si un concurrent fait X checks, on en fait 2X. Si un concurrent supporte Y algos, on en supporte 2Y.
+
+Le standard n'est pas "bon". Le standard n'est pas "tres bon".
+Le standard est : IMBATTABLE.
+
+---
+
+*Doctrine Mahoraga v3 — Redigee une seule fois. Respectee pour toujours.*

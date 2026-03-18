@@ -2,7 +2,7 @@ import { Shield, Github, Linkedin, Mail, ExternalLink, Heart } from "lucide-reac
 import { Link } from "react-router";
 
 const toolLinks = [
-  { label: "Pentesting", path: "/pentesting" },
+  { label: "Hacking Éthique", path: "/hacking-ethique" },
   { label: "Analyse VirusTotal", path: "/virustotal" },
   { label: "SSL Checker", path: "/ssl-checker" },
   { label: "Mots de passe", path: "/tools/password" },
